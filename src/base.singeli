@@ -1,0 +1,49 @@
+include 'arch/c'
+include 'skin/c'
+
+def __add{a,b:P & match{'pointer',typekind{P}}}  = emit{P, 'op +', cast{u64,a}, b}
+def __add{a:P,b & match{'pointer',typekind{P}}}  = emit{P, 'op +', a, cast{u64,b}}
+def __sub{a:P,b & match{'pointer',typekind{P}}}  = emit{P, 'op -', a, cast{u64,b}}
+def __sub{a:P,b:P & match{'pointer',typekind{P}}}  = emit{u64, 'op -', a, b}
+
+oper infix right -> load 50
+oper infix right <- __store 5
+def __store{ind}{ptr, val} = store{ptr, ind, val}
+def __store{ptr, val} = __store{0}{ptr, val}
+
+def U = u64
+
+def __add{a, b:u1} = __add{a, emit{U,'',b}}
+def __sub{a, b:u1} = __sub{a, emit{U,'',b}}
+
+def LIKELY{X} = emit{type{X}, '__builtin_expect', X,1}
+def RARE  {X} = emit{type{X}, '__builtin_expect', X,0}
+
+def for{vars,begin,end,block} = {
+  i:U = begin
+  while (i<end) {
+    exec{i, vars,block}
+    i = i+1
+  }
+}
+def for_const{vars,begin,end,block} = {
+  if (0<end) {
+    for_const{vars,begin,end-1,block}
+    exec{end-1, vars,block}
+  }
+}
+def for_unroll{unr}{vars,begin,end,block} = {
+  i:U = begin
+  eu := end & ~cast{U,unr-1}
+  while (i<eu) {
+    @for_const (j to unr) exec{i+j, vars,block}
+    i += unr
+  }
+  while (i<end) {
+    exec{i, vars,block}
+    i += 1
+  }
+}
+
+def print{x:T & match{'number',kind{T}}} = emit{void,'printf','"%d\n"',x}
+def print{x:(U)} = emit{void,'printf','"%ld\n"',x}
