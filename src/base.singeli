@@ -1,22 +1,25 @@
 include 'arch/c'
 include 'skin/c'
 
-def __add{a,b:P & match{'pointer',typekind{P}}}  = emit{P, 'op +', cast{u64,a}, b}
-def __add{a:P,b & match{'pointer',typekind{P}}}  = emit{P, 'op +', a, cast{u64,b}}
-def __sub{a:P,b & match{'pointer',typekind{P}}}  = emit{P, 'op -', a, cast{u64,b}}
-def __sub{a:P,b:P & match{'pointer',typekind{P}}}  = emit{u64, 'op -', a, b}
+def ptrwidth = width{*void}
+def usize = primtype{'u',ptrwidth}
+
+def to_ptrdiff{a} = cast{primtype{'i',ptrwidth}, a}
+def to_ptrdiff{a:T} = promote{ptrwidth, a}
+def __add{a,b:P & match{'pointer',typekind{P}}}  = emit{P, 'op +', to_ptrdiff{a}, b}
+def __add{a:P,b & match{'pointer',typekind{P}}}  = emit{P, 'op +', a, to_ptrdiff{b}}
+def __sub{a:P,b & match{'pointer',typekind{P}}}  = emit{P, 'op -', a, to_ptrdiff{b}}
+def __sub{a:P,b:P & match{'pointer',typekind{P}}}  = emit{usize, 'op -', a, b}
 
 oper infix right -> load 50
 oper infix right <- __store 5
 def __store{ind}{ptr, val} = store{ptr, ind, val}
 def __store{ptr, val} = __store{0}{ptr, val}
 
-def usize = u64
-
 def addtype{a:T} = T
 def addtype{a:T & match{'pointer',typekind{T}}} = usize
-def __add{a, b:u1} = __add{a, emit{addtype{a},'',b}}
-def __sub{a, b:u1} = __sub{a, emit{addtype{a},'',b}}
+def __add{a, b:u1} = __add{a, promote{addtype{a},b}}
+def __sub{a, b:u1} = __sub{a, promote{addtype{a},b}}
 
 def LIKELY{X} = emit{type{X}, '__builtin_expect', X,1}
 def RARE  {X} = emit{type{X}, '__builtin_expect', X,0}
