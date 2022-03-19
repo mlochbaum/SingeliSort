@@ -23,10 +23,10 @@ def findrange{arr, len} = {
 def readrange{arr, len} = tup{arr->(-1), arr->len}
 
 #def dist{a,b} = cast{U,cast{UT,b-a}}
-def dist{a,b} = emit{U,'(size_t)',emit{UT,'(unsigned)',b-a}}
+def dist{a,b} = emit{u64,'(size_t)',emit{u32,'(unsigned)',b-a}}
 
 def prefix_sum{x, len} = {
-  sum:T = 0
+  sum:eltype{type{x}} = 0
   @for_unroll{4} (x over i from 0 to len) {
     sum += x
     x = sum

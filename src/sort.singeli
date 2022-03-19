@@ -1,10 +1,7 @@
-def T = i32
-def UT = u32
-
 include './base'
 include './common'
 include './merge'
 include './count'
 include './rh'
 
-'rhsort' = rh_sort{merge_chk, merge_from{merge_chk}, findrange}
+'rhsort' = rh_sort{u64, i32, merge_chk, merge_from{merge_chk}, findrange}

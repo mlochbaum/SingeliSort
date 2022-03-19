@@ -5,7 +5,7 @@ def thresh_init = 2*BLOCK
 
 # Main Robin Hood insertion algorithm
 # Fill and empty the buffer. Doesn't include merges.
-def rh_insert{x:*T, len, buf:*T, buflen, pos, empty} = {
+def rh_insert{x:*T, len:U, buf:*T, buflen, pos, empty:T} = {
   fill{buf, buflen, empty}
 
   # Stolen blocks go to xb
@@ -40,7 +40,7 @@ def rh_insert{x:*T, len, buf:*T, buflen, pos, empty} = {
 
 # Insert an element val to buf at init (cur := buf->init)
 # Return the location after the last value moved
-def insertval{init:(U), val:(T), cur:(T), buf:*T, empty:(T)} = {
+def insertval{init:U, val:T, cur:T, buf:*T, empty:T} = {
   ins:=init; end:=init
   # Reposition elements after val branchlessly during the search
   do {
@@ -54,7 +54,7 @@ def insertval{init:(U), val:(T), cur:(T), buf:*T, empty:(T)} = {
   1+end   # Account for just-inserted val
 }
 
-def stealblocks{start:(U), end:(U), buf:*T, dst:*T, pos, empty} = {
+def stealblocks{start:U, end:U, buf:*T, dst:*T, pos, empty:T} = {
   def j = start
   # Find the beginning of the chain (required for stability)
   while ((j>0) & (buf->(j-1)!=empty)) --j
@@ -74,7 +74,7 @@ def stealblocks{start:(U), end:(U), buf:*T, dst:*T, pos, empty} = {
 }
 
 # Statistical check of samples to make sure it's not too clumpy
-def checkdist{sample, num, pos} = {
+def checkdist{sample, num:U, pos} = {
   prev := pos{sample->0}
   score:U = 0
   @for (sample over i from 1 to num) {
@@ -83,7 +83,7 @@ def checkdist{sample, num, pos} = {
   }
 }
 
-def rh_main{merge, merge_from, alloc, check}{x, n, minv, maxv, r} = {
+def rh_main{merge, merge_from, alloc, check}{x:*T, n:U, minv:T, maxv, r} = {
   sh:U = 0                              # Contract to fit range
   while (r>5*n) { ++sh; r=r>>1 }        # Shrink to stay at O(n) memory
   def pos{v} = dist{minv,v} >> sh
@@ -110,12 +110,12 @@ def rh_main{merge, merge_from, alloc, check}{x, n, minv, maxv, r} = {
 
 # Sort array of ints with length n.
 # Assume there's enough aux space.
-rh_sort{merge, merge_from, range}(x:*T, n:U, aux:*T) : void = {
+rh_sort{U, T, merge, merge_from, range}(x:*T, n:U, aux:*T) : void = {
   # Find the range.
   def mm=range{x, n}; minv:=tupsel{0,mm}; maxv:=tupsel{1,mm}
   r:U = dist{minv, maxv}                # Size of range
   if (r/4 < n) {
-    count_sort(x, n, emit{*U,'(uint64_t*)',aux}, minv, r+1)
+    count_sort{U,T}(x, n, emit{*U,'(uint64_t*)',aux}, minv, r+1)
   } else {
     rh_main{merge, merge_from, {sz}=>aux, {pos}=>1}{x, n, minv, maxv, r}
   }
