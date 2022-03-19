@@ -5,14 +5,10 @@ def merge{a:*T, l:(U), n:(U), aux:*T} = {
   ai:U=0; bi:U=l; i:U=0
   while (i < bi) {
     def pick{arr,ind} = { a <-{i} arr->ind; ++ind }
-    if (aux->ai <= a->bi) {
+    if (bi >= n or aux->ai <= a->bi) {
       pick{aux,ai}
     } else {
       pick{a  ,bi}
-      if (bi >= n) {
-        dst:=a+(i+1)-ai; @for (dst, aux over _ from ai to l) dst=aux
-        i = bi-1
-      }
     }
     ++i
   }
@@ -25,7 +21,7 @@ def swap{a, b} = { t:=a; a=b; b=t }
 def merge_chk{a:*T, l:(U), n:(U), aux:*T} = {
   if (a->(l-1) <= a->l) {
     0
-  } else if ((a->(n-1) < a->0) & (l+l==n)) {
+  } else if (a->(n-1) < a->0 and l+l==n) {
     b := a+l;
     @for (a, b over i to l) swap{a, b}
   } else {
