@@ -1,14 +1,9 @@
 include 'arch/c'
 include 'skin/c'
 
-def ptrwidth = width{*void}
-def usize = primtype{'u',ptrwidth}
+def usize = primtype{'u',width{*void}}
 
-def to_ptrdiff{a} = cast{primtype{'i',ptrwidth}, a}
-def to_ptrdiff{a:T} = promote{ptrwidth, a}
-def __add{a,b:P & match{'pointer',typekind{P}}}  = emit{P, 'op +', to_ptrdiff{a}, b}
-def __add{a:P,b & match{'pointer',typekind{P}}}  = emit{P, 'op +', a, to_ptrdiff{b}}
-def __sub{a:P,b & match{'pointer',typekind{P}}}  = emit{P, 'op -', a, to_ptrdiff{b}}
+# Change to unsigned: here we always subtract smaller from greater
 def __sub{a:P,b:P & match{'pointer',typekind{P}}}  = emit{usize, 'op -', a, b}
 
 oper infix right -> load 50
@@ -21,8 +16,9 @@ def addtype{a:T & match{'pointer',typekind{T}}} = usize
 def __add{a, b:u1} = __add{a, promote{addtype{a},b}}
 def __sub{a, b:u1} = __sub{a, promote{addtype{a},b}}
 
-def LIKELY{X} = emit{type{X}, '__builtin_expect', X,1}
-def RARE  {X} = emit{type{X}, '__builtin_expect', X,0}
+def expect{e}{X} = emit{type{X}, '__builtin_expect', X,e}
+def RARE   = expect{0}
+def LIKELY = expect{1}
 
 def for{vars,begin,end,block} = {
   def e = promote{usize,end}
