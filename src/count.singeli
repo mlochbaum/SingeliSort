@@ -2,7 +2,7 @@ def incrp{p} = p <- p->0 + 1
 
 def do_count{val:*T, len:U, count:*U, min:T, zero} = {
   @for (val over i to len) {
-    incrp{count + dist{min,val}}
+    incrp{count + dist{U,min,val}}
     if (zero) val=0
   }
 }

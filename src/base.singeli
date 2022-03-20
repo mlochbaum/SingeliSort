@@ -25,8 +25,9 @@ def LIKELY{X} = emit{type{X}, '__builtin_expect', X,1}
 def RARE  {X} = emit{type{X}, '__builtin_expect', X,0}
 
 def for{vars,begin,end,block} = {
+  def e = promote{usize,end}
   i:usize = begin
-  while (i<end) {
+  while (i<e) {
     exec{i, vars,block}
     i = i+1
   }
@@ -38,13 +39,14 @@ def for_const{vars,begin,end,block} = {
   }
 }
 def for_unroll{unr}{vars,begin,end,block} = {
+  def e = promote{usize,end}
   i:usize = begin
-  eu := end & ~cast{usize,unr-1}
+  eu := e & ~cast{usize,unr-1}
   while (i<eu) {
     @for_const (j to unr) exec{i+j, vars,block}
     i += unr
   }
-  while (i<end) {
+  while (i<e) {
     exec{i, vars,block}
     i += 1
   }

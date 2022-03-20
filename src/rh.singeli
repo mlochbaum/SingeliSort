@@ -86,7 +86,7 @@ def checkdist{sample, num:U, pos} = {
 def rh_main{merge, merge_from, alloc, check}{x:*T, n:U, minv:T, maxv, r} = {
   sh:U = 0                              # Contract to fit range
   while (r>5*n) { ++sh; r=r>>1 }        # Shrink to stay at O(n) memory
-  def pos{v} = dist{minv,v} >> sh
+  def pos{v} = dist{U,minv,v} >> sh
 
   # Goes down to BLOCK once we know we have to merge
   sz:U = r + thresh_init                # Buffer size
@@ -99,7 +99,7 @@ def rh_main{merge, merge_from, alloc, check}{x:*T, n:U, minv:T, maxv, r} = {
   xb := rh_insert{x, n, aux, sz, pos, empty}
 
   # Merge stolen blocks back in if necessary
-  l:U = xb-x   # Size of those blocks
+  l:U = emit{U,'',xb-x}   # Size of those blocks
   if (l > 0) {
     # Sort x[0..l]
     merge_from{x, l, aux, BLOCK}
@@ -113,9 +113,9 @@ def rh_main{merge, merge_from, alloc, check}{x:*T, n:U, minv:T, maxv, r} = {
 rh_sort{U, T, merge, merge_from, range}(x:*T, n:U, aux:*T) : void = {
   # Find the range.
   def mm=range{x, n}; minv:=tupsel{0,mm}; maxv:=tupsel{1,mm}
-  r:U = dist{minv, maxv}                # Size of range
+  r:U = dist{U, minv, maxv}            # Size of range
   if (r/4 < n) {
-    count_sort{U,T}(x, n, emit{*U,'(uint64_t*)',aux}, minv, r+1)
+    count_sort{U,T}(x, n, reinterpret{*U,aux}, minv, r+1)
   } else {
     rh_main{merge, merge_from, {sz}=>aux, {pos}=>1}{x, n, minv, maxv, r}
   }

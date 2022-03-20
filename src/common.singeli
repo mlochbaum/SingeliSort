@@ -22,7 +22,7 @@ def findrange{arr, len} = {
 }
 def readrange{arr, len} = tup{arr->(-1), arr->len}
 
-def dist{a:T,b:T} = promote{u64,reinterpret{primtype{'u',width{T}},b-a}}
+def dist{U,a:T,b:T} = promote{U,reinterpret{primtype{'u',width{T}},b-a}}
 
 def prefix_sum{x, len} = {
   sum:eltype{type{x}} = 0
