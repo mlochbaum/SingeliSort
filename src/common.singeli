@@ -1,4 +1,13 @@
 # Utilities likely to be useful for multiple sorting algorithms
+include './prefix'
+
+# Try the given types to lower constant overhead on small arrays
+def index_options{sort, n:U, itypes} = {
+  def max{C} = 1<<width{C}
+  def try{C} = { if (C<U and LIKELY{n<=max{C}}) return{sort{C}} }
+  each{try, itypes}
+  sort{U}
+}
 
 def fill{dst, len, val} = {
   @for (dst over i to len) dst = val
@@ -23,11 +32,3 @@ def findrange{arr, len} = {
 def readrange{arr, len} = tup{arr->(-1), arr->len}
 
 def dist{U,a:T,b:T} = U ^~ primtype{'u',width{T}} ~~ (b-a)
-
-def prefix_sum{x, len} = {
-  sum:eltype{type{x}} = 0
-  @for_unroll{4} (x over i from 0 to len) {
-    sum += x
-    x = sum
-  }
-}

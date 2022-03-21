@@ -1,0 +1,45 @@
+# Prefix sums
+
+# Inclusive, probably slightly faster
+# Used by counting sort
+def prefix_sum{x:T, len} = {
+  sum:eltype{T} = 0
+  @for_unroll{4} (x over i from 0 to len) {
+    sum += x
+    x = sum
+  }
+}
+
+# Exclusive, interleaved
+def prefix_sum_excl{ptrs & istup{ptrs}} = {
+  # Running total initialized to 0 for each array
+  def sum = each{{_:pT}=>{s:eltype{pT}=0}, ptrs}
+  # Do the sums
+  @for (i to count_len) {
+    def prev = clone{sum}
+    sum += ptrs -> i
+    ptrs <-{i} prev
+  }
+}
+
+def setw{c} = width{eltype{type{tupsel{0,c}}}} # single element type width
+
+# SWAR optimization for 1- or 2-byte counts and no SIMD
+def prefix_sum_excl{ptrs & istup{ptrs} & 16>=setw{ptrs}} = {
+  # Width of count and word
+  def wc = setw{ptrs}; def ww = width{usize}
+  # Word pointers
+  def pwords = each{bind{~~,*usize}, ptrs}
+  # Sum registers initialized to 0
+  def sum = each{{_}=>{s:usize=0}, ptrs}
+  # Shift amounts, e.g. tup{8, 16, 32}
+  def shifts{w} = { if (w<ww) merge{w, shifts{2*w}}; else tup{} }
+  # Okay, let's begin
+  @for (i to count_len * wc / ww) {
+    def prev = clone{sum}
+    sum += pwords->i
+    each{{k} => {sum += sum<<k}, shifts{wc}}
+    pwords <-{i} prev | sum<<wc
+    sum >>= ww-wc
+  }
+}

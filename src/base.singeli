@@ -1,6 +1,7 @@
 include 'arch/c'
 include 'skin/c'
 
+oper infix none === match        0
 oper infix right -> load        50
 oper infix right <- __store      5
 oper infix right ~~ reinterpret 55
@@ -53,6 +54,20 @@ def for_unroll{unr}{vars,begin,end,block} = {
     i += 1
   }
 }
+
+# Some ad-hoc tuple mapping for interleaved prefix sums
+def istup{t} = 'tuple'===kind{t}
+def clone{old} = { new:=old }
+def clone{o & istup{o}} = each{clone,o}
+def load{p, i & istup{p}} = each{{p}=>load{p,i}, p}
+def store{p, i, v & istup{p}} = each{{p,v}=>store{p,i,v}, p,v}
+def __add{a, b & istup{a} & istup{b}} = each{__add, a, b}
+def __or{a, b & istup{a} & istup{b}} = each{__or, a, b}
+def __shl{a, b & istup{a}} = each{{a}=>__shl{a,b}, a}
+def __shr{a, b & istup{a}} = each{{a}=>__shr{a,b}, a}
+
+def range{n} = merge{range{n-1}, n-1}
+def range{n==0} = tup{}
 
 def print{x:T & match{'number',kind{T}}} = emit{void,'printf','"%d\n"',x}
 def print{x:u64} = emit{void,'printf','"%ld\n"',x}
