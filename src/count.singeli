@@ -30,11 +30,18 @@ def count_sum{x, n, count, min, range} = {
 }
 
 # Counting sort of the n values starting at x
-count_sort{U,T}(x:*T, n:U, aux:*U, min:T, range:U) : void = {
+def count_sort{x:*T, n:U, aux:*U, min:T, range:U} = {
   fill{aux, range, 0}
   if (range < n/8) { # Short range: branching on count is cheap
     count_fill{x, n, aux, min, range}
   } else {
     count_sum{x, n, aux, min, range}
   }
+}
+
+# Assume full range
+def count_sort{x:pT, n:U, aux} = {
+  def T = eltype{pT}
+  def range = 1<<width{T}
+  count_sort{x, n, *U~~aux, T~~(-range/2), U~~range}
 }

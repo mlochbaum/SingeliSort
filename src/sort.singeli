@@ -1,8 +1,33 @@
 include './base'
 include './common'
+include './ins'
 include './merge'
 include './count'
 include './radix'
 include './rh'
 
-'rhsort' = rh_sort{u64, i32, merge_chk, merge_from{merge_chk}, findrange}
+# For 1-byte inputs, use insertion sort if it's very small, and counting
+# sort otherwise
+sort8{U,T}(x:*T, n:U, aux:*void) : void = {
+  if (n < 24) {
+    insertion_sort{x, n}
+  } else {
+    count_sort{x, n, aux}
+  }
+}
+
+# For 2-byte inputs, use insertion, radix, or counting sort
+sort16{U,T}(x:*T, n:U, aux:*void) : void = {
+  if (n < 24) {
+    insertion_sort{x, n}
+  } else if (n < 1<<15) {
+    radix{U,T}(x, n, aux)
+  } else {
+    count_sort{x, n, aux}
+  }
+}
+
+'sort8'  = sort8 {usize, i8}
+'sort16' = sort16{usize, i16}
+
+'rhsort' = rh_sort{usize, i32, merge_chk, merge_from{merge_chk}, findrange}
