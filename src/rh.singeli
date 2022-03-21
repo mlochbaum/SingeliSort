@@ -115,7 +115,7 @@ rh_sort{U, T, merge, merge_from, range}(x:*T, n:U, aux:*T) : void = {
   def mm=range{x, n}; minv:=tupsel{0,mm}; maxv:=tupsel{1,mm}
   r:U = dist{U, minv, maxv}            # Size of range
   if (r/4 < n) {
-    count_sort{U,T}(x, n, *U~~aux, minv, r+1)
+    count_sort{x, n, *U~~aux, minv, r+1}
   } else {
     rh_main{merge, merge_from, {sz}=>aux, {pos}=>1}{x, n, minv, maxv, r}
   }
