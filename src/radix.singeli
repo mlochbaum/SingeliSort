@@ -26,7 +26,7 @@ def radix_main{src:pT, n:U, dsts, count:pC} = {
   # Count frequency of all bytes simultaneously
   radix_counts{src, n, counts}
   # Exclusive sum of each count array (interleaved for speed)
-  prefix_sum_excl{counts}
+  prefix_sum_excl{counts, issigned{eltype{pT}}}
   # And do the radix sorting
   radix_move{src, dsts, n, counts}
 }

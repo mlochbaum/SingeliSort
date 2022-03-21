@@ -61,6 +61,8 @@ def clone{old} = { new:=old }
 def clone{o & istup{o}} = each{clone,o}
 def load{p, i & istup{p}} = each{{p}=>load{p,i}, p}
 def store{p, i, v & istup{p}} = each{{p,v}=>store{p,i,v}, p,v}
+def load{p, i & istup{p} & istup{i}} = each{load, p,i}
+def store{p, i, v & istup{p} & istup{i}} = each{store, p,i,v}
 def __add{a, b & istup{a} & istup{b}} = each{__add, a, b}
 def __or{a, b & istup{a} & istup{b}} = each{__or, a, b}
 def __shl{a, b & istup{a}} = each{{a}=>__shl{a,b}, a}
