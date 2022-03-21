@@ -1,8 +1,10 @@
 def incrp{p} = p <- p->0 + 1
+def widen{v} = promote{width{*void}, v}
 
 def do_count{val:*T, len:U, count:*U, min:T, zero} = {
+  c := count - widen{min}
   @for (val over i to len) {
-    incrp{count + dist{U,min,val}}
+    incrp{c + widen{val}}
     if (zero) val=0
   }
 }
@@ -43,5 +45,6 @@ def count_sort{x:*T, n:U, aux:*U, min:T, range:U} = {
 def count_sort{x:pT, n:U, aux} = {
   def T = eltype{pT}
   def range = 1<<width{T}
-  count_sort{x, n, *U~~aux, T~~(-range/2), U~~range}
+  def min = { if (issigned{T}) -range/2; else 0 }
+  count_sort{x, n, *U~~aux, T~~min, U~~range}
 }
