@@ -9,8 +9,10 @@ include './rh'
 # For 1-byte inputs, use insertion sort if it's very small, and counting
 # sort otherwise
 sort8{U,T}(x:*T, n:U, aux:*void) : void = {
-  if (n < 24) {
+  if (n < 12) {
     insertion_sort{x, n}
+  } else if (radix_fits{n,u8}) {
+    radix_inplace{x, n, *T~~aux, *u8~~(aux+n)}
   } else {
     count_sort{x, n, aux}
   }

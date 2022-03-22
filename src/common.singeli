@@ -2,9 +2,8 @@
 include './prefix'
 
 # Try the given types to lower constant overhead on small arrays
-def index_options{sort, n:U, itypes} = {
-  def max{C} = 1<<width{C}
-  def try{C} = { if (C<U and LIKELY{n<=max{C}}) return{sort{C}} }
+def index_options{sort, n:U, test, itypes} = {
+  def try{C} = { if (C<U and LIKELY{test{n,C}}) return{sort{C}} }
   each{try, itypes}
   sort{U}
 }

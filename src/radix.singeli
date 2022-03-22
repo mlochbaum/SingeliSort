@@ -69,16 +69,23 @@ def radix_inplace{x:pT, n:U, aux:pT, count:pC, steps} = {
     else merge{tupsel{j,t}, alt{n,t,i+1,(j+1)*(j+1<tuplen{t})}}
   }
   radix_main{x, n, alt{steps,tup{aux,x},0,0}, count}
+  if (1==steps) @for (x,aux over i to n) x=aux
 }
 def radix_inplace{x:pT, n:U, aux:pT, count:pC} = {
   radix_inplace{x, n, aux, count, getsteps{pT}}
 }
 
+# Radix sorting works even for a count one larger than the type maximum:
+# the count array can overflow, but after taking an exclusive sum it
+# only affects portions after the last element (that is, target indices
+# can't overflow)
+def radix_fits{n, T & isint{T} & ~issigned{T}} = n <= 1<<width{T}
+
 # Radix sort on arbitrary types
 radix{U, T}(x:*T, n:U, aux:*T) : void = {
   count := aux+n
   def rad{C} = radix_inplace{x, n, aux, *C~~count}
-  index_options{rad, n, tup{u8, u32}}
+  index_options{rad, n, radix_fits, tup{u8, u32}}
 }
 
 # Sort 32-bit data with a 16-bit range
@@ -88,6 +95,6 @@ radpack32(x32:*u32, n:u32, aux:*void, min:u32) : void = {
   aux := x16 + n
   @for (x16, x32 over i to n) x16 = u16<~(x32 - min)
   def rad{C} = radix_inplace{x16, n, aux, *C~~aux}
-  index_options{rad, n, tup{u8, u32}}
-  @for (x32, x16 over i to n) x32 = min + u32^~x16
+  index_options{rad, n, radix_fits, tup{u8, u32}}
+  i:u32=n; while (i>0) { --i; x32 <-{i} min + u32^~(x16->i) }
 }
