@@ -1,16 +1,11 @@
 # Utilities likely to be useful for multiple sorting algorithms
 include './prefix'
 
-# Try the given types to lower constant overhead on small arrays
-def index_options{sort, n:U, test, itypes} = {
-  def try{C} = { if (C<U and LIKELY{test{n,C}}) return{sort{C}} }
-  each{try, itypes}
-  sort{U}
-}
+def map{op, a, b, n} = @for (a over _ to n) op{a,b}
+def map{op, a, b:T, n & 'pointer'===typekind{T}} = @for (a, b over _ to n) op{a,b}
 
-def fill{dst, len, val} = {
-  @for (dst over i to len) dst = val
-}
+# memset/memcpy
+def set = bind{map, {a,b} => {a=b}}
 
 def filter_neq{dst, src, len, v} = {
   d:=dst; l:=len
@@ -31,3 +26,10 @@ def findrange{arr, len} = {
 def readrange{arr, len} = tup{arr->(-1), arr->len}
 
 def dist{U,a:T,b:T} = U ^~ primtype{'u',width{T}} ~~ (b-a)
+
+# Try the given types to lower constant overhead on small arrays
+def index_options{sort, n:U, test, itypes} = {
+  def try{C} = { if (C<U and LIKELY{test{n,C}}) return{sort{C}} }
+  each{try, itypes}
+  sort{U}
+}

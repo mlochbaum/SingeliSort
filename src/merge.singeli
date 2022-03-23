@@ -1,7 +1,7 @@
 # Merge arrays of length l and n-l starting at a, using buffer aux.
 # Branchy and slow
 def merge{a:pT, l:U, n:U, aux:pT} = {
-  @for (a, aux over _ to l) aux=a
+  set{aux, a, l}
   ai:U=0; bi:U=l; i:U=0
   while (i < bi) {
     def pick{arr,ind} = { a <-{i} arr->ind; ++ind }
@@ -14,8 +14,6 @@ def merge{a:pT, l:U, n:U, aux:pT} = {
   }
 }
 
-def swap{a, b} = { t:=a; a=b; b=t }
-
 # Check for easy cases when the merge can be avoided
 # If the buffer helping at all, most merges go through these
 def merge_chk{a:pT, l:U, n:U, aux:pT} = {
@@ -23,7 +21,7 @@ def merge_chk{a:pT, l:U, n:U, aux:pT} = {
     0
   } else if (a->(n-1) < a->0 and l+l==n) {
     b := a+l;
-    @for (a, b over i to l) swap{a, b}
+    map{<->, a, b, l}
   } else {
     merge{a,l,n,aux}
   }

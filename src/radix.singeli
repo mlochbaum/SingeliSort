@@ -33,7 +33,7 @@ def radix_main{src:pT, n:U, dsts, count:pC} = {
 
 # Zero and split into num arrays with count_len values each
 def init_counts{space:pT, num} = {
-  fill{space, num*count_len, 0}
+  set{space, 0, num*count_len}
   def split{c,n} = merge{c, split{c+count_len, n-1}}
   def split{c,n==0} = tup{}
   split{space, num}
@@ -69,7 +69,7 @@ def radix_inplace{x:pT, n:U, aux:pT, count:pC, steps} = {
     else merge{tupsel{j,t}, alt{n,t,i+1,(j+1)*(j+1<tuplen{t})}}
   }
   radix_main{x, n, alt{steps,tup{aux,x},0,0}, count}
-  if (1==steps) @for (x,aux over i to n) x=aux
+  if (1==steps) set{x, aux, n}
 }
 def radix_inplace{x:pT, n:U, aux:pT, count:pC} = {
   radix_inplace{x, n, aux, count, getsteps{pT}}

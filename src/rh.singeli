@@ -6,7 +6,7 @@ def thresh_init = 2*BLOCK
 # Main Robin Hood insertion algorithm
 # Fill and empty the buffer. Doesn't include merges.
 def rh_insert{x:*T, len:U, buf:*T, buflen, pos, empty:T} = {
-  fill{buf, buflen, empty}
+  set{buf, empty, buflen}
 
   # Stolen blocks go to xb
   xb := x
@@ -33,7 +33,7 @@ def rh_insert{x:*T, len:U, buf:*T, buflen, pos, empty:T} = {
   # Move all values from the buffer back to the array
   xt := filter_neq{xb, buf, buflen, empty}
   # Recover sentinel elements based on total count
-  fill{xt, (x+len)-xt, empty}
+  set{xt, empty, (x+len)-xt}
 
   xb
 }
@@ -61,7 +61,7 @@ def stealblocks{start:U, end:U, buf:*T, dst:*T, pos, empty:T} = {
   # Move as many blocks from it as possible
   hj := buf+j; hf := buf+end
   while (hj <= hf-BLOCK) {
-    @for (i to BLOCK) { dst <-{i} hj->i; hj <-{i} empty }
+    @for (hj, dst over i to BLOCK) { dst = hj; hj = empty }
     hj += BLOCK; dst += BLOCK
   }
   # Leftover elements might have to move backwards

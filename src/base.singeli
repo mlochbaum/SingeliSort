@@ -4,6 +4,7 @@ include 'skin/c'
 oper infix none === match        0
 oper infix right -> load        50
 oper infix right <- __store      5
+oper infix none <-> swap        20
 oper infix right ~~ reinterpret 55
 oper infix right ^~ promote     55
 oper infix right <~ narrow      55
@@ -12,6 +13,9 @@ def __store{ind}{ptr, val} = store{ptr, ind, val}
 def __store{ptr, val} = __store{0}{ptr, val}
 
 def narrow{T, v} = emit{T, '', v}
+
+def swap{a, b} = { t:=a; a=b; b=t }
+def swap{a:T, b:T & 'pointer'===typekind{T}} = { t := *a; a <- *b; b <- t }
 
 def usize = primtype{'u',width{*void}}
 
@@ -71,5 +75,5 @@ def __shr{a, b & istup{a}} = each{{a}=>__shr{a,b}, a}
 def range{n} = merge{range{n-1}, n-1}
 def range{n==0} = tup{}
 
-def print{x:T & match{'number',kind{T}}} = emit{void,'printf','"%d\n"',x}
+def print{x:T & isint{T}} = emit{void,'printf','"%d\n"',x}
 def print{x:u64} = emit{void,'printf','"%ld\n"',x}
