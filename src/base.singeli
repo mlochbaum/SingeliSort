@@ -40,7 +40,7 @@ def for{vars,begin,end,block} = {
   }
 }
 def for_const{vars,begin,end,block} = {
-  if (0<end) {
+  if (begin<end) {
     for_const{vars,begin,end-1,block}
     exec{end-1, vars,block}
   }

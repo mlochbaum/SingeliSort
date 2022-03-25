@@ -1,0 +1,48 @@
+# Given a pointer and an odd-length tuple of indices, return the index
+# of the median value without moving any values
+def locate_median{src:pT, inds} = {
+  def l = tuplen{inds}
+  def k = l >> 1  # Median is greater than exactly k values
+
+  # Count number of comparisons
+  # Only l-1 counters: if median comes last it's found by elimination
+  def sums = each{{_}=>{t:u8=0}, range{l-1}}
+
+  def get{i} = src->tupsel{i, inds}
+  def s{i} = tupsel{i, sums}
+
+  @for_const (i from 0 to l-1) {
+    vi := get{i}
+    @for_const (j from i+1 to l) {
+      c:u1 = vi > get{j}
+      s{i} += c
+      if (j < l-1) s{j} += ~c
+    }
+    if (s{i} == k) return{tupsel{i, inds}}
+  }
+  tupsel{l-1, inds}
+}
+locate_median_3{T,U}(src:*T, i0:U, i1:U, i2:U) : U = {
+  locate_median{src, tup{i0,i1,i2}}
+}
+
+def locate_3of3_pseudomedian{array:pT, n:U} = {
+  h := n / 2
+  q := n / 4
+  def med{a,b,c} = locate_median_3{eltype{pT},U}(array, a,b,c)
+  med{
+    med{  1, q  , h  },  # 125
+    med{  0, h-1, n-1},  # 048
+    med{h+1, h+q, n-2}   # 367
+  }
+}
+
+def get_pivot{array:pT, n:U} = {
+  i:U = 0
+  if (n <= 256) {
+    i = locate_median_3{eltype{pT},U}(array, 0,n/2,n-1)
+  } else {
+    i = locate_3of3_pseudomedian{array, n}
+  }
+  array -> i
+}
