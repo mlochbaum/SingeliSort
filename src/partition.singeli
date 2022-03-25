@@ -1,0 +1,16 @@
+# Stable partitioning with external memory
+# Place values v into dst_false or dst_true according to cmp{v, piv}
+# Return the number of true comparisons, or length of dst_true
+def flux_partition{src:*T, cmp, piv:T, dst_true:*T, dst_false:*T, n:U} = {
+  # Number of true comparisons, and index into dst_true
+  l:U = 0
+  dst_f := dst_false
+  @for_unroll{8} (src over i to n) {
+    c := cmp{src, piv}
+    # Write to both destinations: one will be overwritten
+    dst_true <-{ l} src
+    dst_f    <-{-l} src; ++dst_f
+    l += c
+  }
+  l
+}

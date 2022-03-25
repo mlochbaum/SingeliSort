@@ -1,0 +1,34 @@
+include './partition'
+
+# Quicksort loop with unstable partitioning
+# Pointer layout credit to Scandum: https://github.com/scandum/fluxsort
+# Sort src, placing the result in dst and using space from aux
+# src may be equal to dst or aux
+def flux_loop{recur, piv:T, src:*T, dst:*T, aux:*T, n:U} = {
+  # Partition: left side directly in dst with length l, includes pivots
+  l := flux_partition{src, <=, piv, dst, aux, n}
+  # If pivot is the maximum value, everything ends in dst
+  if (l == n) {
+    # Partition again with pivots on the right
+    # This bounds performance by O(k*n) for only k unique values
+    l = flux_partition{dst, <, piv, dst, aux, n}
+    set{dst+l, aux, n-l} # Should probably write a reverse partition to avoid this
+  } else {
+    # Otherwise, sort the right-hand side, moving it from aux to dst
+    recur{aux, dst+l, aux, n-l}
+  }
+  # Left-hand side
+  recur{dst, dst, aux, l}
+}
+
+# Example call, very slow
+flux32loop(src:*i32, dst:*i32, aux:*i32, n:u64) : void = {
+  # Base case
+  if (n < 32) {
+    if (dst!=src) set{dst,src,n}
+    insertion_sort{dst, n, 1}
+    return{}
+  }
+  piv := *src  # Very bad pivot selection
+  flux_loop{bind{call,flux32loop}, piv, src,dst,aux,n}
+}
