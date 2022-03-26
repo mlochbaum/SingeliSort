@@ -17,13 +17,13 @@ def insertion_sort{x:pT, len:U, guard} = {
 def insertion_sort{x:pT, len:U} = insertion_sort{x, len, 1}
 
 # Sort an array where indices less than start are already sorted
-def insertion_finish{x, start, n} = {
+def insertion_finish{dst, src, start, n} = {
   @for (i from start to n) {
-    end := x + i
-    xi := *end
+    end := dst + i
+    xi := src->i
     prev := end - 1
     if (*prev > xi) {
-      if (*x > xi) {
+      if (*dst > xi) {
         top := i
         do { end <- *prev; --end; --prev } while (--top)
         end <- xi
