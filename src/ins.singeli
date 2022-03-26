@@ -14,4 +14,23 @@ def insertion_sort{x:pT, len:U, guard} = {
   }
 }
 # Default to guarded
-def insertion_sort{len:U, x:pT} = insertion_sort{len, x, 1}
+def insertion_sort{x:pT, len:U} = insertion_sort{x, len, 1}
+
+# Sort an array where indices less than start are already sorted
+def insertion_finish{x, start, n} = {
+  @for (i from start to n) {
+    end := x + i
+    xi := *end
+    prev := end - 1
+    if (*prev > xi) {
+      if (*x > xi) {
+        top := i
+        do { end <- *prev; --end; --prev } while (--top)
+        end <- xi
+      } else {
+        do { end <- *prev; --end; --prev } while (*prev > xi)
+        end <- xi
+      }
+    }
+  }
+}

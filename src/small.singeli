@@ -1,0 +1,73 @@
+# Sorting small arrays: less than 32 elements
+# Follows Quadsort: https://github.com/scandum/quadsort
+
+# Sort exactly 2 elements branchlessly
+def sort_2{ptr} = {
+  c := ptr->0 > ptr->1
+  t := ptr->(~c)
+  ptr <-{0} ptr->c
+  ptr <-{1} t
+  c
+}
+
+def sort_lt4{ptr, n} = {
+  if (n > 1) {
+    if (n > 2) {
+      sort_2{ptr}
+      sort_2{ptr+1}
+    }
+    sort_2{ptr}
+  }
+}
+
+# The adaptive quad swap
+def sort_4_quad{ptr} = {
+  def s22{ptr} = {
+    sort_2{ptr}
+    sort_2{ptr + 2}
+  }
+  s22{ptr}
+  if (sort_2{ptr+1}) {
+    s22{ptr}
+    sort_2{ptr+1}
+  }
+}
+
+# Specialized parity merging for 8 or 16 elements
+# Always use 2 rounds of merges to get from ptr to swap and back
+def sort_8_16_parity{n, sort_q, merge_h}{ptr:pT} = {
+  # n elements of swap space
+  swap:pT = each{{_}=>0,range{n}}
+
+  # Sort groups of 2 or 4 elements
+  def q = n/4
+  @for_const (i to 4) sort_q{ptr + q*i}
+
+  # Check to see if these groups need to be merged at all
+  def chk{i} = ptr->(i*q - 1) > ptr->(i*q)
+  if (chk{1} or chk{2} or chk{3}) {
+    # Two rounds of merging: ptr to swap in two parts, then back
+    def h = n/2
+    @for_const (i to 2) parity_merge_const{h, swap + h*i, ptr + h*i}
+    merge_h{ptr, swap}
+  }
+}
+def sort_8_parity = sort_8_16_parity{
+  8, sort_2,
+  {d,s}=>parity_merge_const{8, d, s}
+}
+def sort_16_parity = sort_8_16_parity{
+  16, sort_4_quad,
+  {d,s}=>parity_merge{eltype{type{d}}}(d, s, 8, 16)
+}
+
+def sort_lt32{ptr:pT, n:U} = {
+  def use{l, sort} = {
+    sort{ptr}
+    insertion_finish{ptr, l, n}
+  }
+  if      (n <  4) sort_lt4{ptr, n}
+  else if (n <  8) use{ 4, sort_4_quad}
+  else if (n < 16) use{ 8, sort_8_parity}
+  else             use{16, sort_16_parity}
+}

@@ -5,13 +5,13 @@ include './merge'
 include './count'
 include './radix'
 include './rh'
+include './small'
 include './quicksort'
 
-# For 1-byte inputs, use insertion sort if it's very small, and counting
-# sort otherwise
+# For 1-byte inputs, counting sort is usually best
 sort8{U,T}(x:*T, n:U, aux:*void) : void = {
-  if (n < 12) {
-    insertion_sort{x, n}
+  if (n < 16) {
+    sort_lt32{x, n}
   } else if (radix_fits{n,u8}) {
     radix_inplace{x, n, *T~~aux, *u8~~(aux+n)}
   } else {
@@ -22,7 +22,7 @@ sort8{U,T}(x:*T, n:U, aux:*void) : void = {
 # For 2-byte inputs, use insertion, radix, or counting sort
 sort16{U,T}(x:*T, n:U, aux:*void) : void = {
   if (n < 24) {
-    insertion_sort{x, n}
+    sort_lt32{x, n}
   } else if (n < 1<<15) {
     radix{U,T}(x, n, aux)
   } else {

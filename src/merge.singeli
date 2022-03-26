@@ -14,6 +14,49 @@ def merge{a:pT, l:U, n:U, aux:pT} = {
   }
 }
 
+# Parity merge: branchless
+# Main data movement
+def parity_pos{left, right, dst} = {
+  l := *left; r := *right
+  c := l <= r; d := ~c
+  dst <-{c} r; right += d
+  dst <-{d} l; left  += c
+  ++dst
+}
+def parity_neg{left, right, dst} = {
+  l := *left; r := *right
+  c := l <= r; d := ~c
+  --dst
+  dst <-{c} r; right -= c
+  dst <-{d} l; left  -= d
+}
+def sel{cmp, a, b} = { r := b; if (cmp{a,b}) r = a; r }
+
+# Merge halves of length-n array with constant n (4 and 8 used)
+def parity_merge_const{n, dst, src} = {
+  def h = n / 2
+  left := clone{src}; right := src + h; dstc := clone{dst}
+  @for_const (_ to h-1) parity_pos{left, right, dstc}
+  dstc <- sel{<=, *left, *right}
+
+  left = src + (h-1); right = src + (n-1); dstc = dst + (n-1)
+  @for_const (_ to h-1) parity_neg{left, right, dstc}
+  dstc <- sel{ >, *left, *right}
+}
+
+# Merge halves of array
+parity_merge{T}(dst:*T, src:*T, half:usize, n:usize) : void = {
+  lpos := src           ; rpos := src + half ; dpos := dst
+  lneg := src + half - 1; rneg := src + n - 1; dneg := dst + n - 1
+
+  @for (i to half-1) {
+    parity_pos{lpos, rpos, dpos}
+    parity_neg{lneg, rneg, dneg}
+  }
+  dpos <- sel{<=, *lpos, *rpos}
+  dneg <- sel{ >, *lneg, *rneg}
+}
+
 # Check for easy cases when the merge can be avoided
 # If the buffer helping at all, most merges go through these
 def merge_chk{a:pT, l:U, n:U, aux:pT} = {
