@@ -1,3 +1,11 @@
+# LSD Radix sort (includes bucket sort as the 1-step case)
+# Sorts the array according to the least significant byte, then the
+# next higher, and so on.
+# It has the best "generic" performance of any algorithm here, but has
+# no adaptivity and in fact slows down on some fairly common patterns
+# due to cache associativity. So while the implementation here is
+# general, only the 1- and 2-byte forms are used for hybrid sorting.
+
 # Fix the radix at 1 byte because other widths take too much computation
 def radix_bits = 8
 def count_len  = 1<<radix_bits

@@ -1,5 +1,11 @@
-# Sorting small arrays: less than 32 elements
-# Follows Quadsort: https://github.com/scandum/quadsort
+# Sorting small arrays, less than 32 elements
+# Follows quadsort: https://github.com/scandum/quadsort
+
+# The general strategy is to sort an initial portion (at least half the
+# array) with a power-of-two length using merge sort, then add the rest
+# of the elements with insertion sort.
+# These methods are mostly branchless, with some shortcuts that make
+# them adapt slightly to already-sorted data
 
 # Sort exactly 2 elements branchlessly
 def sort_2{dst, src} = {
@@ -11,6 +17,7 @@ def sort_2{dst, src} = {
 }
 def sort_2{ptr} = sort_2{ptr, ptr}
 
+# 0 to 3 elements, could be considered a bubble sort or insertion sort
 def sort_lt4{dst, src, n} = {
   def mov = ~match{dst,src}
   if (n > 1) {

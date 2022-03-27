@@ -1,3 +1,5 @@
+# Partition algorithms for quicksort
+
 # Stable partitioning with external memory
 # Place values v into dst_false or dst_true according to cmp{v, piv}
 # Return the number of true comparisons, or length of dst_true

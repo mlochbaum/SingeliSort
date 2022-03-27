@@ -1,3 +1,9 @@
+# Robin Hood Sort
+# https://github.com/mlochbaum/rhsort
+# An algorithm for data with an approximately uniform distribution,
+# which is very fast on uniform random data and even faster on more even
+# distributions such as shuffled arithmetic progressions
+
 # Minimum size to steal from buffer
 def BLOCK = 16
 # Initial barrier before stealing anything

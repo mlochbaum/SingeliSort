@@ -1,3 +1,5 @@
+# Merge sorting
+
 # Merge arrays of length l and n-l starting at a, using buffer aux.
 # Branchy and slow
 def merge{a:pT, l:U, n:U, aux:pT} = {

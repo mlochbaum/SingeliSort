@@ -1,5 +1,8 @@
-include 'arch/c'
-include 'skin/c'
+# Base definitions that determine how "our version" of Singeli works
+
+# Mostly it looks like C
+include 'arch/c'  # Backend
+include 'skin/c'  # Operators
 
 oper infix none === match        0
 oper infix right -> load        50
