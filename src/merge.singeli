@@ -38,11 +38,11 @@ def sel{cmp, a, b} = { r := b; if (cmp{a,b}) r = a; r }
 def parity_merge_const{n, dst, src} = {
   def h = n / 2
   left := clone{src}; right := src + h; dstc := clone{dst}
-  @for_const (_ to h-1) parity_pos{left, right, dstc}
+  @for_const (h-1) parity_pos{left, right, dstc}
   dstc <- sel{<=, *left, *right}
 
   left = src + (h-1); right = src + (n-1); dstc = dst + (n-1)
-  @for_const (_ to h-1) parity_neg{left, right, dstc}
+  @for_const (h-1) parity_neg{left, right, dstc}
   dstc <- sel{ >, *left, *right}
 }
 
@@ -51,7 +51,7 @@ parity_merge{T}(dst:*T, src:*T, half:usize, n:usize) : void = {
   lpos := src           ; rpos := src + half ; dpos := dst
   lneg := src + half - 1; rneg := src + n - 1; dneg := dst + n - 1
 
-  @for (i to half-1) {
+  @for (half-1) {
     parity_pos{lpos, rpos, dpos}
     parity_neg{lneg, rneg, dneg}
   }

@@ -3,7 +3,7 @@ def widen{v} = promote{width{*void}, v}
 
 def do_count{val:*T, len:U, count:*U, min:T, zero} = {
   c := count - widen{min}
-  @for (val over i to len) {
+  @for (val over len) {
     incrp{c + widen{val}}
     if (zero) val=0
   }
@@ -14,7 +14,7 @@ def count_fill{x, n, count, min, range} = {
   do_count{x, n, count, min, 0}
   # Write based on the counts
   dst := x; v := min
-  @for (count over i to range) {
+  @for (count over range) {
     set{dst, v, count}; dst += count; ++v
   }
 }
@@ -26,7 +26,7 @@ def count_sum{x, n, count, min, range} = {
   # Write differences to x
   x <-{0} min
   end:=range-1; while (count->end == 0) --end # Assume n>0
-  w:=x; @for (count over _ to end) { w+=count; incrp{w} }
+  w:=x; @for (count over end) { w+=count; incrp{w} }
 
   prefix_sum{x, n}
 }

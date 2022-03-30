@@ -67,7 +67,7 @@ def stealblocks{start:U, end:U, buf:*T, dst:*T, pos, empty:T} = {
   # Move as many blocks from it as possible
   hj := buf+j; hf := buf+end
   while (hj <= hf-BLOCK) {
-    @for (hj, dst over i to BLOCK) { dst = hj; hj = empty }
+    @for (hj, dst over BLOCK) { dst = hj; hj = empty }
     hj += BLOCK; dst += BLOCK
   }
   # Leftover elements might have to move backwards
@@ -83,7 +83,7 @@ def stealblocks{start:U, end:U, buf:*T, dst:*T, pos, empty:T} = {
 def checkdist{sample, num:U, pos} = {
   prev := pos{sample->0}
   score:U = 0
-  @for (sample over i from 1 to num) {
+  @for (sample over _ from 1 to num) {
     next:=pos{sample}; d:=next-prev; prev=next
     if (d<16) { score+=16-d; if (score>=60+num/6) return{0} }
   }

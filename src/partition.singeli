@@ -7,7 +7,7 @@ def flux_partition{src:*T, cmp, piv:T, dst_true:*T, dst_false:*T, n:U} = {
   # Number of true comparisons, and index into dst_true
   l:U = 0
   dst_f := dst_false
-  @for_unroll{8} (src over i to n) {
+  @for_unroll{8} (src over n) {
     c := cmp{src, piv}
     # Write to both destinations: one will be overwritten
     dst_true <-{ l} src

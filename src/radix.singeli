@@ -50,7 +50,7 @@ def init_counts{space:pT, num} = {
 # Perform all counts in a single pass
 def radix_counts{x, n, counts} = {
   def keys = keyfns{counts}
-  @for (x over i to n) {
+  @for (x over n) {
     def incr{c, k} = incrp{c + k{x}}
     each{incr, counts, keys}
   }
@@ -59,7 +59,7 @@ def radix_counts{x, n, counts} = {
 # Move data through the successive dsts based on keys and counts
 def radix_move{src, dsts, n, counts} = {
   def step{src, dst, count, key} = {
-    @for (src over i to n) {
+    @for (src over n) {
       def k = key{src}
       c := count->k
       dst <-{c} src
@@ -101,7 +101,7 @@ radix{U, T}(x:*T, n:U, aux:*T) : void = {
 radpack32(x32:*u32, n:u32, aux:*void, min:u32) : void = {
   x16 := *u16 ~~ x32
   aux := x16 + n
-  @for (x16, x32 over i to n) x16 = u16<~(x32 - min)
+  @for (x16, x32 over n) x16 = u16<~(x32 - min)
   def rad{C} = radix_inplace{x16, n, aux, *C~~aux}
   index_options{rad, n, radix_fits, tup{u8, u32}}
   i:u32=n; while (i>0) { --i; x32 <-{i} min + u32^~(x16->i) }

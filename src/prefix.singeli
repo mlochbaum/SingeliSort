@@ -19,7 +19,7 @@ def prefix_word{wi, ww, x, add} = {
 def prefix_sum = {
   # Basic pattern, mutates sum
   def psf{cfor}{x:*T, len, sum:T} = {
-    @cfor (x over i from 0 to len) {
+    @cfor (x over len) {
       sum += x
       x = sum
     }
@@ -41,7 +41,7 @@ def prefix_sum = {
       xor:usize = off; prefix_word{wc, ww, xor, 0}
       {s} => xor ^ s
     } }
-    @for (xw over i to nw) {
+    @for (xw over nw) {
       prefix_word{wc, ww, sum, xw}
       xw = fixsum{sum}
       sum >>= ww-wc
