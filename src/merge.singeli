@@ -2,7 +2,7 @@
 
 # Merge arrays of length l and n-l starting at a, using buffer aux.
 # Branchy and slow
-def merge{a:pT, l:U, n:U, aux:pT} = {
+def branch_merge{a:pT, l:U, n:U, aux:pT} = {
   set{aux, a, l}
   ai:U=0; bi:U=l; i:U=0
   while (i < bi) {
@@ -68,7 +68,7 @@ def merge_chk{a:pT, l:U, n:U, aux:pT} = {
     b := a+l;
     map{<->, a, b, l}
   } else {
-    merge{a,l,n,aux}
+    branch_merge{a,l,n,aux}
   }
 }
 
