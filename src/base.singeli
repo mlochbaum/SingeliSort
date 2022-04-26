@@ -1,8 +1,11 @@
 # Base definitions that determine how "our version" of Singeli works
 
 # Mostly it looks like C
-include 'arch/c'  # Backend
-include 'skin/c'  # Operators
+include 'arch/c'    # Backend
+include 'skin/c'    # Operators
+
+include 'util/tup'  # List utilities: scan and so on
+def range = iota
 
 oper infix none === match        0
 oper infix right -> load        50
@@ -11,6 +14,8 @@ oper infix none <-> swap        20
 oper infix right ~~ reinterpret 55
 oper infix right ^~ promote     55
 oper infix right <~ narrow      55
+
+oper infix none  >* ptr_gt      20
 
 def __store{ind}{ptr, val} = store{ptr, ind, val}
 def __store{ptr, val} = __store{0}{ptr, val}
@@ -75,8 +80,7 @@ def __or{a, b & istup{a} & istup{b}} = each{__or, a, b}
 def __shl{a, b & istup{a}} = each{{a}=>__shl{a,b}, a}
 def __shr{a, b & istup{a}} = each{{a}=>__shr{a,b}, a}
 
-def range{n} = merge{range{n-1}, n-1}
-def range{n==0} = tup{}
+def ptr_gt{a,b} = load{a,0} > load{b,0}
 
 def print{x:T & isint{T}} = emit{void,'printf','"%d\n"',x}
 def print{x:u64} = emit{void,'printf','"%ld\n"',x}

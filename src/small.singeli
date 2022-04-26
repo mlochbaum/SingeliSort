@@ -9,7 +9,7 @@
 
 # Sort exactly 2 elements branchlessly
 def sort_2{dst, src} = {
-  c := src->0 > src->1
+  c := src >* src+1
   t := src->(~c)
   dst <-{0} src->c
   dst <-{1} t
@@ -46,14 +46,14 @@ def sort_4_quad{dst, src} = {
 # Always use 2 rounds of merges to get from ptr to swap and back
 def sort_8_16_parity{n, sort_q, merge_h}{dst:pT, src:pT} = {
   # n elements of swap space
-  swap:pT = each{{_}=>0,range{n}}
+  swap:pT = copy{n,0}
 
   # Sort groups of 2 or 4 elements
   def q = n/4
   @for_const (i to 4) sort_q{dst + q*i, src + q*i}
 
   # Check to see if these groups need to be merged at all
-  def chk{i} = dst->(i*q - 1) > dst->(i*q)
+  def chk{i} = dst+(i*q - 1) >* dst+(i*q)
   if (chk{1} or chk{2} or chk{3}) {
     # Two rounds of merging: dst to swap in two parts, then back
     def h = n/2
