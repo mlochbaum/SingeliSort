@@ -13,14 +13,12 @@ oper infix right <- __store      5
 oper infix none <-> swap        20
 oper infix right ~~ reinterpret 55
 oper infix right ^~ promote     55
-oper infix right <~ narrow      55
+oper infix right <~ cast_i      55
 
 oper infix none  >* ptr_gt      20
 
 def __store{ind}{ptr, val} = store{ptr, ind, val}
 def __store{ptr, val} = __store{0}{ptr, val}
-
-def narrow{T, v} = emit{T, '', v}
 
 def swap{a, b} = { t:=a; a=b; b=t }
 def swap{a:T, b:T & 'pointer'===typekind{T}} = { t := *a; a <- *b; b <- t }

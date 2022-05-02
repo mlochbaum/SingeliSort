@@ -66,11 +66,11 @@ def prefix_sum_excl = {
     # Running total initialized to 0 for each array
     def sum = each{{_:pT}=>{s:eltype{pT}=0}, ptrs}
     # Do the sums
-    @for (i to count_len) {
+    @for (x in ptrs over i to count_len) {
       def prev = clone{sum}
-      def is = sign_inds{signed, i, count_len, ptrs}
-      sum += ptrs -> is
-      ptrs <-{is} prev
+      def is = sign_inds{signed, i, count_len, x}
+      sum += x
+      x = prev
     }
   }
 

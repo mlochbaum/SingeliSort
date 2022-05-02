@@ -81,7 +81,8 @@ def radix_inplace{x:pT, n:U, aux:pT, count:pC} = {
 def radix_fits{n, T & isint{T} & ~issigned{T}} = n <= 1<<width{T}
 
 # Radix sort on arbitrary types
-radix{U, T}(x:*T, n:U, aux:*T) : void = {
+def radix{x:pT, n:U, aux0} = {
+  def T = eltype{pT}; def aux = *T~~aux0
   count := aux+n
   def rad{C} = radix_inplace{x, n, aux, *C~~count}
   index_options{rad, n, radix_fits, tup{u8, u32}}

@@ -26,7 +26,7 @@ sort16{U,T}(x:*T, n:U, aux:*void) : void = {
   if (n < 24) {
     sort_lt32{x, n}
   } else if (n < 1<<15) {
-    radix{U,T}(x, n, aux)
+    radix{x, n, aux}
   } else {
     count_sort{x, n, aux}
   }
