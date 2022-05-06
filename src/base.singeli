@@ -7,15 +7,15 @@ include 'skin/c'    # Operators
 include 'util/tup'  # List utilities: scan and so on
 def range = iota
 
-oper infix none === match        0
-oper infix right -> load        50
-oper infix right <- __store      5
-oper infix none <-> swap        20
-oper infix right ~~ reinterpret 55
-oper infix right ^~ promote     55
-oper infix right <~ cast_i      55
+oper === match       infix none   0
+oper ->  load        infix right 50
+oper <-  __store     infix right  5
+oper <-> swap        infix none  20
+oper ~~  reinterpret infix right 55
+oper ^~  promote     infix right 55
+oper <~  cast_i      infix right 55
 
-oper infix none  >* ptr_gt      20
+oper >*  ptr_gt      infix none  20
 
 def __store{ind}{ptr, val} = store{ptr, ind, val}
 def __store{ptr, val} = __store{0}{ptr, val}
