@@ -62,7 +62,7 @@ def prefix_sum_excl = {
     shiftleft{each{{_}=>i, tup}, j}
   }
 
-  def ps{ptrs, signed & istup{ptrs}} = {
+  def ps{ptrs, signed & ktup{ptrs}} = {
     # Running total initialized to 0 for each array
     def sum = each{{_:pT}=>{s:eltype{pT}=0}, ptrs}
     # Do the sums
@@ -77,7 +77,7 @@ def prefix_sum_excl = {
   def setw{c} = width{eltype{type{tupsel{0,c}}}} # single element type width
 
   # SWAR optimization for 1- or 2-byte counts and no SIMD
-  def ps{ptrs, signed & istup{ptrs} & 16>=setw{ptrs}} = {
+  def ps{ptrs, signed & ktup{ptrs} & 16>=setw{ptrs}} = {
     # Width of count and word
     def wc = setw{ptrs}; def ww = width{usize}
     # Word pointers

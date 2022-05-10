@@ -2,7 +2,7 @@
 include './prefix'
 
 def map{op, a, b, n} = @for (a over n) op{a,b}
-def map{op, a, b:T, n & 'pointer'===typekind{T}} = @for (a, b over n) op{a,b}
+def map{op, a, b:T, n & tptr{T}} = @for (a, b over n) op{a,b}
 
 # memset/memcpy
 def set = bind{map, {a,b} => {a=b}}
