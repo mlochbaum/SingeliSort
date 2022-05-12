@@ -62,6 +62,8 @@ def prefix_sum_excl = {
     shiftleft{each{{_}=>i, tup}, j}
   }
 
+  def ktup{t} = 'tuple'===kind{t}
+
   def ps{ptrs, signed & ktup{ptrs}} = {
     # Running total initialized to 0 for each array
     def sum = each{{_:pT}=>{s:eltype{pT}=0}, ptrs}

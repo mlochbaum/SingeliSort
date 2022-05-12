@@ -33,6 +33,16 @@ def expect{e}{X} = emit{type{X}, '__builtin_expect', X,e}
 def RARE   = expect{0}
 def LIKELY = expect{1}
 
+# Pervasion for interleaved prefix sums
+local include 'util/perv'
+extend perv1{clone}
+extend perv2{load}
+extend (perv{3}){store}
+extend perv2{__add}
+extend perv2{__or }
+extend perv2{__shl}
+extend perv2{__shr}
+
 def for{vars,begin,end,block} = {
   def e = usize^~end
   i:usize = begin
@@ -60,19 +70,6 @@ def for_unroll{unr}{vars,begin,end,block} = {
     i += 1
   }
 }
-
-# Some ad-hoc tuple mapping for interleaved prefix sums
-def ktup{t} = 'tuple'===kind{t}
-local oper \ ktup prefix 40
-def clone{o & \o} = each{clone,o}
-def load {p, i    & \p} = each{{p  }=>load {p,i  }, p  }
-def store{p, i, v & \p} = each{{p,v}=>store{p,i,v}, p,v}
-def load {p, i    & \p & \i} = each{load , p,i  }
-def store{p, i, v & \p & \i} = each{store, p,i,v}
-def __add{a, b & \a & \b} = each{__add, a, b}
-def __or {a, b & \a & \b} = each{__or, a, b}
-def __shl{a, b & \a} = each{{a}=>__shl{a,b}, a}
-def __shr{a, b & \a} = each{{a}=>__shr{a,b}, a}
 
 def print{x:T & isint{T}} = emit{void,'printf','"%d\n"',x}
 def print{x:u64} = emit{void,'printf','"%ld\n"',x}
