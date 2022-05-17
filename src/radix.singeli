@@ -6,6 +6,8 @@
 # due to cache associativity. So while the implementation here is
 # general, only the 1- and 2-byte forms are used for hybrid sorting.
 
+local {
+
 # Fix the radix at 1 byte because other widths take too much computation
 def radix_bits = 8
 def count_len  = 1<<radix_bits
@@ -16,9 +18,9 @@ def getsteps{P & tptr{P}} = getsteps{eltype{P}}
 
 # Given a tuple, get corresponding key generators: bytes starting from
 # the bottom
-def keyfns{tup} = {
-  def kf{sh} = ({v} => u8<~(v>>sh))
-  each{kf, inds{tup} * radix_bits}
+def keyfns{len} = {
+  def kf{sh}{v} = u8<~(v>>sh)
+  each{kf, range{len} * radix_bits}
 }
 
 # Sort the n values in x with a number of radix passes equal to steps
@@ -29,11 +31,13 @@ def radix_main{src:pT, n:U, dsts, count:pC} = {
   # Tuple of zeroed count arrays
   def counts = init_counts{count, steps}
   # Count frequency of all bytes simultaneously
-  radix_counts{src, n, counts}
+  def keys = keyfns{steps}
+  radix_counts{src, n, counts, keys}
   # Exclusive sum of each count array (interleaved for speed)
-  prefix_sum_excl{counts, issigned{eltype{pT}}}
-  # And do the radix sorting
-  radix_move{src, dsts, n, counts}
+  prefix_sum_excl{counts, count_len, issigned{eltype{pT}}}
+  # And do the radix sorting through the successive dsts
+  def srcs = shiftright{tup{src}, dsts}
+  each{radix_move{n}, srcs, dsts, counts, keys}
 }
 
 # Zero and split into num arrays with count_len values each
@@ -43,27 +47,24 @@ def init_counts{space:pT, num} = {
 }
 
 # Perform all counts in a single pass
-def radix_counts{x, n, counts} = {
-  def keys = keyfns{counts}
+def radix_counts{x, n, counts, keys} = {
   @for (x over n) {
     def incr{c, k} = incrp{c + k{x}}
     each{incr, counts, keys}
   }
 }
 
-# Move data through the successive dsts based on keys and counts
-def radix_move{src, dsts, n, counts} = {
-  def step{src, dst, count, key} = {
-    @for (src over n) {
-      def k = key{src}
-      c := count->k
-      dst <-{c} src
-      count <-{k} c+1
-    }
+# One step of radix sorting
+def radix_move{n}{src, dst, count, key} = {
+  @for (src over n) {
+    def k = key{src}
+    c := count->k
+    dst <-{c} src
+    count <-{k} c+1
   }
-  def srcs = shiftright{tup{src}, dsts}
-  each{step, srcs, dsts, counts, keyfns{counts}}
 }
+
+} # end local
 
 # Swap back and forth with aux, ending with the elements in x again
 def radix_inplace{x:pT, n:U, aux:pT, count:pC, steps} = {

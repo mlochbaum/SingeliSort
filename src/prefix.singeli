@@ -2,14 +2,14 @@
 
 # Prefix sum on the size-wi units of word(s) x of width ww
 # Values in x must be registers: the sum is done in place
-def prefix_word{wi, ww, x} = {
+local def prefix_word{wi, ww, x} = {
   # Shift amounts, e.g. tup{8, 16, 32}
   def shifts{w} = { if (w<ww) merge{w, shifts{2*w}}; else tup{} }
   # Add each of these in succession, interleaving if x is a tuple
   each{{k} => {x += x<<k}, shifts{wi}}
 }
 # Add incoming values first
-def prefix_word{wi, ww, x, add} = {
+local def prefix_word{wi, ww, x, add} = {
   x += add
   prefix_word{wi, ww, x}
 }
@@ -64,13 +64,13 @@ def prefix_sum_excl = {
 
   def ktup{t} = 'tuple'===kind{t}
 
-  def ps{ptrs, signed & ktup{ptrs}} = {
+  def ps{ptrs, len, signed & ktup{ptrs}} = {
     # Running total initialized to 0 for each array
     def sum = each{{_:pT}=>{s:eltype{pT}=0}, ptrs}
     # Do the sums
-    @for (x in ptrs over i to count_len) {
+    @for (x in ptrs over i to len) {
       def prev = clone{sum}
-      def is = sign_inds{signed, i, count_len, x}
+      def is = sign_inds{signed, i, len, x}
       sum += x
       x = prev
     }
@@ -79,7 +79,8 @@ def prefix_sum_excl = {
   def setw{c} = width{eltype{type{tupsel{0,c}}}} # single element type width
 
   # SWAR optimization for 1- or 2-byte counts and no SIMD
-  def ps{ptrs, signed & ktup{ptrs} & 16>=setw{ptrs}} = {
+  # Assumes total size is a whole number of words
+  def ps{ptrs, len, signed & ktup{ptrs} & 16>=setw{ptrs}} = {
     # Width of count and word
     def wc = setw{ptrs}; def ww = width{usize}
     # Word pointers
@@ -87,7 +88,7 @@ def prefix_sum_excl = {
     # Sum registers initialized to 0
     def sum = each{{_}=>{s:usize=0}, ptrs}
     # Length of the loop
-    def len = count_len * wc / ww
+    def len = len * wc / ww
     @for (i to len) {
       def prev = clone{sum}
       def is = sign_inds{signed, i, len, ptrs}
