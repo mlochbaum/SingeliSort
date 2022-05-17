@@ -13,8 +13,7 @@ def radix_bits = 8
 def count_len  = 1<<radix_bits
 
 # Number of steps required
-def getsteps{T} = width{T} / radix_bits
-def getsteps{P & tptr{P}} = getsteps{eltype{P}}
+def getsteps{x} = width{scaltype{x}} / radix_bits
 
 # Given a tuple, get corresponding key generators: bytes starting from
 # the bottom
@@ -26,15 +25,15 @@ def keyfns{len} = {
 # Sort the n values in x with a number of radix passes equal to steps
 # Store counts in count, which must hold steps*count_len counts
 # The result for step i is stored at tupsel{i,dsts}
-def radix_main{src:pT, n:U, dsts, count:pC} = {
+def radix_main{src, n:U, dsts, count:pC} = {
   def steps = tuplen{dsts}
   # Tuple of zeroed count arrays
   def counts = init_counts{count, steps}
   # Count frequency of all bytes simultaneously
   def keys = keyfns{steps}
-  radix_counts{src, n, counts, keys}
+  radix_counts{single{src}, n, counts, keys}
   # Exclusive sum of each count array (interleaved for speed)
-  prefix_sum_excl{counts, count_len, issigned{eltype{pT}}}
+  prefix_sum_excl{counts, count_len, issigned{scaltype{src}}}
   # And do the radix sorting through the successive dsts
   def srcs = shiftright{tup{src}, dsts}
   each{radix_move{n}, srcs, dsts, counts, keys}
@@ -57,7 +56,7 @@ def radix_counts{x, n, counts, keys} = {
 # One step of radix sorting
 def radix_move{n}{src, dst, count, key} = {
   @for (src over n) {
-    def k = key{src}
+    def k = key{single{src}}
     c := count->k
     dst <-{c} src
     count <-{k} c+1
@@ -67,12 +66,20 @@ def radix_move{n}{src, dst, count, key} = {
 } # end local
 
 # Swap back and forth with aux, ending with the elements in x again
-def radix_inplace{x:pT, n:U, aux:pT, count:pC, steps} = {
+def radix_inplace{x:pT, n:U, aux:pT, count:pC} = {
+  def steps = getsteps{x}
   radix_main{x, n, cycle{steps,tup{aux,x}}, count}
   if (steps % 2) set{x, aux, n}
 }
-def radix_inplace{x:pT, n:U, aux:pT, count:pC} = {
-  radix_inplace{x, n, aux, count, getsteps{pT}}
+
+def radix_grade_inplace{x:pT, xa:pT, g:pI, ga:pI, n:U, count:pC} = {
+  def steps = getsteps{x}
+  def c{...p, s} = cycle{steps, p}
+  def dsts = flip{tup{
+    shiftleft{c{x,xa}, 'sink'}, # Start at xa; ignore last
+    reverse  {c{g,ga}}          # End at g
+  }}
+  radix_main{tup{x,'id'}, n, dsts, count}
 }
 
 # Radix sorting works even for a count one larger than the type maximum:

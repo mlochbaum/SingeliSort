@@ -21,6 +21,12 @@ sort8{U,T}(x:*T, n:U, aux:*void) : void = {
   }
 }
 
+grade8{U,T,I}(x:*T, g:*I, n:U, aux:*void) : void = {
+  # Bucket sort; second copies of x and g are unused swap space,
+  # as final x isn't needed and initial g is implicit
+  radix_grade_inplace{x, x, g, g, n, *U~~aux}
+}
+
 # For 2-byte inputs, use insertion, radix, or counting sort
 sort16{U,T}(x:*T, n:U, aux:*void) : void = {
   if (n < 24) {

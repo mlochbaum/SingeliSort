@@ -11,7 +11,10 @@ def range = iota
 oper <-> swap        infix none  20
 oper >*  ptr_gt      infix none  20
 
+def ktup{t} = 'tuple'===kind{t}
 def tptr{T} = 'pointer'===typekind{T}
+
+def single{x} = (if (ktup{x}) tupsel{0,x}; else x)
 
 def swap{a, b} = { t:=a; a=b; b=t }
 def swap{a:T, b:T & tptr{T}} = { t := *a; a <- *b; b <- t }
@@ -42,6 +45,13 @@ extend perv2{__add}
 extend perv2{__or }
 extend perv2{__shl}
 extend perv2{__shr}
+
+def type{s & ktup{s}} = type{tupsel{0,s}}
+def scaltype{T} = (if (tptr{T}) scaltype{eltype{T}}; else T)
+def scaltype{x & ~('type'===kind{x})} = scaltype{type{x}}
+
+def load{ptr=='id', i} = i
+def store{ptr=='sink', i, val} = val
 
 def for{vars,begin,end,block} = {
   def e = usize^~end
