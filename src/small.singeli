@@ -44,9 +44,12 @@ def sort_4_quad{dst, src} = {
 
 # Specialized parity merging for 8 or 16 elements
 # Always use 2 rounds of merges to get from ptr to swap and back
-def sort_8_16_parity{n, sort_q, merge_h}{dst:pT, src:pT} = {
+def sort_8_16_parity{n, sort_q, merge_h}{dst, src} = {
+  def T = scaltype{dst}
   # n elements of swap space
-  swap:pT = copy{n,0}
+  def sw{p:pT} = {s:type{p} = copy{n,0}}
+  extend perv1{sw}
+  def swap = sw{dst}
 
   # Sort groups of 2 or 4 elements
   def q = n/4
@@ -70,15 +73,23 @@ def sort_16_parity = sort_8_16_parity{
   {d,s}=>parity_merge{eltype{type{d}}}(d, s, 8, 16)
 }
 
-def sort_lt32{dst:pT, src:pT, n:U} = {
+local include 'util/perv'
+def sort_lt32{dst, src, n:U, max} = {
   def use{l, sort} = {
     sort{dst, src}
-    if (dst!=src) set{dst+l,src+l,n-l}
+    def set{a,b,n} = @for (a,b over n) a=b
+    def cpy{dst,src} = {
+      if (isid{src} or dst!=src) @for (dst,src over _ from l to n) dst=src
+    }
+    extend perv2{cpy}
+    cpy{dst, src}
     insertion_finish{dst, dst, l, n}
   }
-  if      (n <  4) sort_lt4{dst, src, n}
-  else if (n <  8) use{ 4, sort_4_quad}
-  else if (n < 16) use{ 8, sort_8_parity}
-  else             use{16, sort_16_parity}
+  if      (max <=  4 or n <  4) sort_lt4{dst, src, n}
+  else if (max <=  8 or n <  8) use{ 4, sort_4_quad}
+  else if (max <= 16 or n < 16) use{ 8, sort_8_parity}
+  else                          use{16, sort_16_parity}
 }
-def sort_lt32{ptr:pT, n:U} = sort_lt32{ptr, ptr, n}
+def sort_lt32{dst, src, n:U} = sort_lt32{dst, src, n, 32}
+def sort_lt32{ptr, n:U, max & 'number'===kind{max}} = sort_lt32{ptr, ptr, n, max}
+def sort_lt32{ptr, n:U} = sort_lt32{ptr, ptr, n}

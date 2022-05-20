@@ -16,34 +16,41 @@ def branch_merge{a:pT, l:U, n:U, aux:pT} = {
   }
 }
 
+local {
+  def extend ecmp{f} = {
+    def f{a,b & ktup{a} & ktup{b}} = f{tupsel{0,a},tupsel{0,b}}
+  }
+  extend ecmp{__le}; extend ecmp{__gt}
+}
+
 # Parity merge: branchless
 # Main data movement
 def parity_pos{left, right, dst} = {
-  l := *left; r := *right
+  l := left->0; r := right->0
   c := l <= r; d := ~c
   dst <-{c} r; right += d
   dst <-{d} l; left  += c
   ++dst
 }
 def parity_neg{left, right, dst} = {
-  l := *left; r := *right
+  l := left->0; r := right->0
   c := l <= r; d := ~c
   --dst
   dst <-{c} r; right -= c
   dst <-{d} l; left  -= d
 }
-def sel{cmp, a, b} = { r := b; if (cmp{a,b}) r = a; r }
+def sel{cmp, a, b} = { r := b; if (cmp{single{a},single{b}}) r = a; r }
 
 # Merge halves of length-n array with constant n (4 and 8 used)
 def parity_merge_const{n, dst, src} = {
   def h = n / 2
   left := clone{src}; right := src + h; dstc := clone{dst}
   @for_const (h-1) parity_pos{left, right, dstc}
-  dstc <- sel{<=, *left, *right}
+  dstc <- sel{<=, left->0, right->0}
 
   left = src + (h-1); right = src + (n-1); dstc = dst + (n-1)
   @for_const (h-1) parity_neg{left, right, dstc}
-  dstc <- sel{ >, *left, *right}
+  dstc <- sel{ >, left->0, right->0}
 }
 
 # Merge halves of array

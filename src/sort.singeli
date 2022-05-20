@@ -13,18 +13,12 @@ include './quicksort'
 # For 1-byte inputs, counting sort is usually best
 sort8{U,T}(x:*T, n:U, aux:*void) : void = {
   if (n < 16) {
-    sort_lt32{x, n}
+    sort_lt32{x, n, 16}
   } else if (radix_fits{n,u8}) {
     radix_inplace{x, n, *T~~aux, *u8~~(aux+n)}
   } else {
     count_sort{x, n, aux}
   }
-}
-
-grade8{U,T,I}(x:*T, g:*I, n:U, aux:*void) : void = {
-  # Bucket sort; second copies of x and g are unused swap space,
-  # as final x isn't needed and initial g is implicit
-  radix_grade_inplace{x, x, g, g, n, *U~~aux}
 }
 
 # For 2-byte inputs, use insertion, radix, or counting sort
@@ -38,8 +32,22 @@ sort16{U,T}(x:*T, n:U, aux:*void) : void = {
   }
 }
 
+# Reasonable for both 1-byte and 2-byte inputs
+grade8_16{U,T,I}(x:*T, g:*I, n:U, aux:*void) : void = {
+  if (n < 16) {
+    sort_lt32{tup{x,g}, tup{x,I~~0}, n, 16}
+  } else {
+    # Bucket sort; second copies of x and g are unused swap space,
+    # as final x isn't needed and initial g is implicit
+    radix_grade_inplace{x, x, g, g, n, *U~~aux}
+  }
+}
+
 'sort8'  = sort8 {usize, i8}
 'sort16' = sort16{usize, i16}
+
+'grade8_64'  = grade8_16{usize, i8 , u64}
+'grade16_64' = grade8_16{usize, i16, u64}
 
 'rhsort' = rh_sort{usize, i32, merge_chk, merge_from{merge_chk}, findrange}
 

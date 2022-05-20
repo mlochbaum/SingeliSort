@@ -79,7 +79,7 @@ def radix_grade_inplace{x:pT, xa:pT, g:pI, ga:pI, n:U, count:pC} = {
     shiftleft{c{x,xa}, 'sink'}, # Start at xa; ignore last
     reverse  {c{g,ga}}          # End at g
   }}
-  radix_main{tup{x,'id'}, n, dsts, count}
+  radix_main{tup{x,scaltype{pI}~~0}, n, dsts, count}
 }
 
 # Radix sorting works even for a count one larger than the type maximum:

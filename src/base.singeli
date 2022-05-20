@@ -19,7 +19,9 @@ def single{x} = (if (ktup{x}) tupsel{0,x}; else x)
 def swap{a, b} = { t:=a; a=b; b=t }
 def swap{a:T, b:T & tptr{T}} = { t := *a; a <- *b; b <- t }
 
+def __pnt{t & ktup{t}} = __pnt{single{t}}
 def ptr_gt{a,b} = load{a,0} > load{b,0}
+def ptr_gt{a,b & ktup{a} & ktup{b}} = load{single{a},0} > load{single{b},0}
 
 def usize = primtype{'u',width{*void}}
 
@@ -42,16 +44,20 @@ extend perv1{clone}
 extend perv2{load}
 extend (perv{3}){store}
 extend perv2{__add}
+extend perv2{__sub}
 extend perv2{__or }
 extend perv2{__shl}
 extend perv2{__shr}
+extend perv1{__decr}
 
 def type{s & ktup{s}} = type{tupsel{0,s}}
 def scaltype{T} = (if (tptr{T}) scaltype{eltype{T}}; else T)
 def scaltype{x & ~('type'===kind{x})} = scaltype{type{x}}
 
-def load{ptr=='id', i} = i
+def isid{ptr} = ~tptr{type{ptr}}
+def load{ptr, i & isid{ptr}} = ptr + i
 def store{ptr=='sink', i, val} = val
+def __add{ptr=='sink', i} = 'sink'
 
 def for{vars,begin,end,block} = {
   def e = usize^~end
