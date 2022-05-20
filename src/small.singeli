@@ -77,7 +77,6 @@ local include 'util/perv'
 def sort_lt32{dst, src, n:U, max} = {
   def use{l, sort} = {
     sort{dst, src}
-    def set{a,b,n} = @for (a,b over n) a=b
     def cpy{dst,src} = {
       if (isid{src} or dst!=src) @for (dst,src over _ from l to n) dst=src
     }
@@ -91,5 +90,5 @@ def sort_lt32{dst, src, n:U, max} = {
   else                          use{16, sort_16_parity}
 }
 def sort_lt32{dst, src, n:U} = sort_lt32{dst, src, n, 32}
-def sort_lt32{ptr, n:U, max & 'number'===kind{max}} = sort_lt32{ptr, ptr, n, max}
+def sort_lt32{ptr, n:U, max & knum{max}} = sort_lt32{ptr, ptr, n, max}
 def sort_lt32{ptr, n:U} = sort_lt32{ptr, ptr, n}

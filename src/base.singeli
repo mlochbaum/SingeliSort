@@ -6,22 +6,24 @@ include 'skin/c'    # Operators
 include 'skin/cext'
 
 include 'util/tup'  # List utilities: scan and so on
+include 'util/kind' # Kind-test functions like ktup
 def range = iota
 
 oper <-> swap        infix none  20
 oper >*  ptr_gt      infix none  20
+oper *?  lazy_load   prefix      60
+oper *?  lazy_load   infix right 50
 
-def ktup{t} = 'tuple'===kind{t}
 def tptr{T} = 'pointer'===typekind{T}
 
-def single{x} = (if (ktup{x}) tupsel{0,x}; else x)
+local def first{t} = tupsel{0,t}
+def single{x} = (if (ktup{x}) first{x}; else x)
 
 def swap{a, b} = { t:=a; a=b; b=t }
 def swap{a:T, b:T & tptr{T}} = { t := *a; a <- *b; b <- t }
 
 def __pnt{t & ktup{t}} = __pnt{single{t}}
 def ptr_gt{a,b} = load{a,0} > load{b,0}
-def ptr_gt{a,b & ktup{a} & ktup{b}} = load{single{a},0} > load{single{b},0}
 
 def usize = primtype{'u',width{*void}}
 
@@ -50,14 +52,39 @@ extend perv2{__shl}
 extend perv2{__shr}
 extend perv1{__decr}
 
-def type{s & ktup{s}} = type{tupsel{0,s}}
+def extend ecmp{f} = {
+  def f{a,b & ktup{a} & ktup{b}} = f{first{a},first{b}}
+}
+extend ({...f}=>each{ecmp,f}){
+  __eq, __ne, __lt, __gt, __le, __ge,
+  ptr_gt
+}
+
+def type{s & ktup{s}} = type{first{s}}
 def scaltype{T} = (if (tptr{T}) scaltype{eltype{T}}; else T)
-def scaltype{x & ~('type'===kind{x})} = scaltype{type{x}}
+def scaltype{x & ~ktyp{x}} = scaltype{type{x}}
 
 def isid{ptr} = ~tptr{type{ptr}}
 def load{ptr, i & isid{ptr}} = ptr + i
 def store{ptr=='sink', i, val} = val
 def __add{ptr=='sink', i} = 'sink'
+
+def lazy_load{p} = lazy_load{p,0}
+def lazy_load{p,i} = {
+  def s = load{single{p},single{i}}
+  if (not ktup{p}) s; else {
+    def ll{p,i}{} = load{p,i}
+    def pr = slice{p,1}
+    merge{
+      tup{s},
+      (if (ktup{i}) each{ll, pr, slice{i,1}}; else each{{p}=>ll{p,i},pr})
+    }
+  }
+}
+def store{p, i, val & kgen{val}} = store{p, i, val{}}
+def get{a} = a
+def get{a & kgen{a}} = a{}
+extend perv1{get}
 
 def for{vars,begin,end,block} = {
   def e = usize^~end

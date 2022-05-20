@@ -19,17 +19,17 @@ def insertion_sort{x:pT, len:U} = insertion_sort{x, len, 1}
 def insertion_finish{dst, src, start, n} = {
   @for (i from start to n) {
     end := dst + i
-    xi := single{src}->i
+    def xi = src*?i
     prev := end - 1
-    if (*prev > xi) {
-      def xs = (if (ktup{src}) merge{tup{xi}, slice{src,1}->i}; else xi)
-      if (*dst > xi) {
+    if (*?prev > xi) {
+      def xi = get{xi}
+      if (*?dst > xi) {
         top := i
         do { end <- prev->0; --end; --prev } while (--top)
-        end <- xs
+        end <- xi
       } else {
-        do { end <- prev->0; --end; --prev } while (*prev > xi)
-        end <- xs
+        do { end <- prev->0; --end; --prev } while (*?prev > xi)
+        end <- xi
       }
     }
   }

@@ -16,13 +16,6 @@ def branch_merge{a:pT, l:U, n:U, aux:pT} = {
   }
 }
 
-local {
-  def extend ecmp{f} = {
-    def f{a,b & ktup{a} & ktup{b}} = f{tupsel{0,a},tupsel{0,b}}
-  }
-  extend ecmp{__le}; extend ecmp{__gt}
-}
-
 # Parity merge: branchless
 # Main data movement
 def parity_pos{left, right, dst} = {
