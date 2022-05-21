@@ -40,7 +40,7 @@ def expect{e}{X} = emit{type{X}, '__builtin_expect', X,e}
 def RARE   = expect{0}
 def LIKELY = expect{1}
 
-# Pervasion for interleaved prefix sums
+# Pervasion
 local include 'util/perv'
 extend perv1{clone}
 extend perv2{load}
@@ -51,6 +51,7 @@ extend perv2{__or }
 extend perv2{__shl}
 extend perv2{__shr}
 extend perv1{__decr}
+def eachrec{fn,...a} = { apply{(extend (perv{tuplen{a}}){fn}), a} }
 
 def extend ecmp{f} = {
   def f{a,b & ktup{a} & ktup{b}} = f{first{a},first{b}}

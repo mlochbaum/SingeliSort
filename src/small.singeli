@@ -47,9 +47,7 @@ def sort_4_quad{dst, src} = {
 def sort_8_16_parity{n, sort_q, merge_h}{dst, src} = {
   def T = scaltype{dst}
   # n elements of swap space
-  def sw{p:pT} = {s:type{p} = copy{n,0}}
-  extend perv1{sw}
-  def swap = sw{dst}
+  def swap = eachrec{{p:pT}=>{s:pT = copy{n,0}}, dst}
 
   # Sort groups of 2 or 4 elements
   def q = n/4
@@ -73,15 +71,13 @@ def sort_16_parity = sort_8_16_parity{
   {d,s}=>parity_merge{eltype{type{d}}}(d, s, 8, 16)
 }
 
-local include 'util/perv'
 def sort_lt32{dst, src, n:U, max} = {
   def use{l, sort} = {
     sort{dst, src}
     def cpy{dst,src} = {
       if (isid{src} or dst!=src) @for (dst,src over _ from l to n) dst=src
     }
-    extend perv2{cpy}
-    cpy{dst, src}
+    eachrec{cpy, dst, src}
     insertion_finish{dst, dst, l, n}
   }
   if      (max <=  4 or n <  4) sort_lt4{dst, src, n}
