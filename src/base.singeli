@@ -51,7 +51,7 @@ extend perv2{__or }
 extend perv2{__shl}
 extend perv2{__shr}
 extend perv1{__decr}
-def eachrec{fn,...a} = { apply{(extend (perv{tuplen{a}}){fn}), a} }
+def eachrec{fn,...a} = { (extend (perv{tuplen{a}}){fn}){...a} }
 
 def extend ecmp{f} = {
   def f{a,b & ktup{a} & ktup{b}} = f{first{a},first{b}}
@@ -114,6 +114,3 @@ def for_unroll{unr}{vars,begin,end,block} = {
     i += 1
   }
 }
-
-def print{x:T & isint{T}} = emit{void,'printf','"%d\n"',x}
-def print{x:u64} = emit{void,'printf','"%ld\n"',x}
