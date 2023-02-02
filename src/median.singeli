@@ -1,3 +1,5 @@
+local {
+
 # Given a pointer and an odd-length tuple of indices, return the index
 # of the median value without moving any values
 def locate_median{src:pT, inds} = {
@@ -25,11 +27,33 @@ def locate_median{src:pT, inds} = {
 locate_median_3{T,U}(src:*T, i0:U, i1:U, i2:U) : U = {
   locate_median{src, tup{i0,i1,i2}}
 }
+locate_median_5{T,U}(src:*T, i0:U, i1:U, i2:U, i3:U, i4:U) : U = {
+  locate_median{src, tup{i0,i1,i2,i3,i4}}
+}
+def median_from{medfn}{array:pT, U} = {
+  def fn = medfn{eltype{pT},U}
+  {...inds} => fn(array, ...inds)
+}
+def median3_from = median_from{locate_median_3}
+def median5_from = median_from{locate_median_5}
+
+def median_pseudorandom{start:U, inc:U, seed:V, mask:V, ops, median} = {
+  def num = tuplen{ops}
+  def cand{op, notlast} = {
+    v := start + U^~(seed & mask)
+    seed ^= op{seed}
+    if (notlast) start += inc
+    v
+  }
+  median{...each{cand, ops, range{num} < num-1}}
+}
+
+} # end local
 
 def locate_3of3_pseudomedian{array:pT, n:U} = {
   h := n / 2
   q := n / 4
-  def med{a,b,c} = locate_median_3{eltype{pT},U}(array, a,b,c)
+  def med = median3_from{array, U}
   med{
     med{  1, q  , h  },  # 125
     med{  0, h-1, n-1},  # 048
@@ -37,12 +61,27 @@ def locate_3of3_pseudomedian{array:pT, n:U} = {
   }
 }
 
+def locate_5of3_pseudomedian{array:pT, n:U} = {
+  seed:u32 = u32<~n
+  mask:u32 = 63
+  def sh{op,a}{x} = op{x,a}
+  def shifts = tup{sh{<<,7}, sh{>>,9}, sh{<<,8}}
+  div := n / 16
+  def med = median3_from{array, U}
+  def get3{f} = {
+    median_pseudorandom{clone{f * div}, div, seed, mask, shifts, med}
+  }
+  median5_from{array,U}{...each{get3, tup{0,3,7,10,13}}}
+}
+
 def get_pivot{array:pT, n:U} = {
   i:U = 0
   if (n <= 256) {
     i = locate_median_3{eltype{pT},U}(array, 0,n/2,n-1)
-  } else {
+  } else if (n <= 1024) {
     i = locate_3of3_pseudomedian{array, n}
+  } else {
+    i = locate_5of3_pseudomedian{array, n}
   }
   array -> i
 }
