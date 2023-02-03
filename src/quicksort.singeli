@@ -1,5 +1,41 @@
 include './partition'
 include './median'
+include './xorshift'
+include './arith'  # Logs and square roots
+
+def get_pivot{array:pT, n:U, getaux, sort} = {
+  # log_2 of minimum size for sampling
+  def sl0 = 14
+  # Output array and index
+  arr:=array; ind:U = 0
+  if (n <= 256) {
+    ind = locate_3_median{array, n}
+  } else if (n <= 1024) {
+    ind = locate_3of3_pseudomedian{array, n}
+  } else if (n <= 1 << sl0) {
+    ind = locate_5of3_pseudomedian{array, n}
+  } else {
+    aux := getaux{}
+    # gap is the expected distance between adjacent samples
+    # We'll get about n/gap samples
+    log2:U = floor_log2{n, sl0}
+    gap_min := 1 << (log2 / 2 + floor_log2{2 + sl0} >> 1)
+    gap := sqrt_approx{2*n * (2+log2), gap_min}
+
+    # Collect samples with split xorshift and add to aux
+    aux1 := aux
+    def add{ind} = { aux1 <- array->ind; ++aux1 }
+    mask := gap_min - 1
+    def add3 = make_split_xorshift{tup{13,17,5}, n, mask, add}
+
+    i:U = 0; while (i < n - (mask + 2 * gap)) add3{i, gap}
+    ns := aux1 - aux
+    sort{aux, aux, aux1, ns}
+    arr = aux
+    ind = ns / 2
+  }
+  arr -> ind
+}
 
 # Quicksort loop with unstable partitioning
 # Pointer layout credit to Scandum: https://github.com/scandum/fluxsort

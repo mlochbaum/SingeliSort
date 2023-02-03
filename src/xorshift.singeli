@@ -1,0 +1,18 @@
+# Xorshift generator, e.g. s^=s<<13; s^=s>>17; s^=s<<5;
+# All three steps for one value is expensive, so use intermediates too.
+# One run of the result calls action{} on and outputs 3 values
+def make_split_xorshift{shifts, s, m, action} = {
+  seed := u32<~s; def doseed{op,a}{} = {seed ^= op{seed,a}}
+  mask := u32<~m
+  def updates = each{doseed, tup{<<,>>,<<}, shifts}
+  {start:U, inc:U} => {
+    def run{upd} = {
+      def r = action{clone{start + U^~(seed & mask)}}
+      upd{}
+      start += inc
+      r
+    }
+    each{run, updates}
+  }
+}
+def make_split_xorshift{sh,s,m} = make_split_xorshift{sh,s,m,{v}=>v}

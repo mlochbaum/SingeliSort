@@ -1,6 +1,6 @@
 local {
 
-include './arith'  # Logs and square roots
+include './xorshift'
 
 # Given a pointer and an odd-length tuple of indices, return the index
 # of the median value without moving any values
@@ -39,26 +39,11 @@ def median_from{medfn}{array:pT, U} = {
 def median3_from = median_from{locate_median_3}
 def median5_from = median_from{locate_median_5}
 
-# Xorshift generator, e.g. s^=s<<13; s^=s>>17; s^=s<<5;
-# All three steps for one value is expensive, so use intermediates too.
-# One run of the result calls action{} on and outputs 3 values
-def make_split_xorshift{shifts, s, m, action} = {
-  seed := u32<~s; def doseed{op,a}{} = {seed ^= op{seed,a}}
-  mask := u32<~m
-  def updates = each{doseed, tup{<<,>>,<<}, shifts}
-  {start:U, inc:U} => {
-    def run{upd} = {
-      def r = action{clone{start + U^~(seed & mask)}}
-      upd{}
-      start += inc
-      r
-    }
-    each{run, updates}
-  }
-}
-def make_split_xorshift{sh,s,m} = make_split_xorshift{sh,s,m,{v}=>v}
-
 } # end local
+
+def locate_3_median{array:pT, n:U} = {
+  median3_from{array,U}{0,n/2,n-1}
+}
 
 def locate_3of3_pseudomedian{array:pT, n:U} = {
   h := n / 2
@@ -77,38 +62,4 @@ def locate_5of3_pseudomedian{array:pT, n:U} = {
   def med = median3_from{array, U}
   def get3{f} = med{...xorshift16{clone{f * div}, div}}
   median5_from{array,U}{...each{get3, tup{0,3,7,10,13}}}
-}
-
-def get_pivot{array:pT, n:U, getaux, sort} = {
-  # log_2 of minimum size for sampling
-  def sl0 = 14
-  # Output array and index
-  arr:=array; ind:U = 0
-  if (n <= 256) {
-    ind = locate_median_3{eltype{pT},U}(array, 0,n/2,n-1)
-  } else if (n <= 1024) {
-    ind = locate_3of3_pseudomedian{array, n}
-  } else if (n <= 1 << sl0) {
-    ind = locate_5of3_pseudomedian{array, n}
-  } else {
-    aux := getaux{}
-    # gap is the expected distance between adjacent samples
-    # We'll get about n/gap samples
-    log2:U = floor_log2{n, sl0}
-    gap_min := 1 << (log2 / 2 + floor_log2{2 + sl0} >> 1)
-    gap := sqrt_approx{2*n * (2+log2), gap_min}
-
-    # Collect samples with split xorshift and add to aux
-    aux1 := aux
-    def add{ind} = { aux1 <- array->ind; ++aux1 }
-    mask := gap_min - 1
-    def add3 = make_split_xorshift{tup{13,17,5}, n, mask, add}
-
-    i:U = 0; while (i < n - (mask + 2 * gap)) add3{i, gap}
-    ns := aux1 - aux
-    sort{aux, aux, aux1, ns}
-    arr = aux
-    ind = ns / 2
-  }
-  arr -> ind
 }
