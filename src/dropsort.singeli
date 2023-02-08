@@ -1,0 +1,69 @@
+# Dropsort! Don't like a value? Kick it out!
+# Drop-merge sort cleans up after this crazy strategy by then sorting
+# the dropped values, and merging them back in.
+# By carefully deciding when to drop a value, we get an algorithm that
+# handles sort-of-sorted input really well.
+
+# It's not stable, because a dropped value will be sorted after one
+# that's kept, even though one value might be dropped when an equal
+# later one is kept.
+
+# Guarded or unguarded drop-merge sort of len values at x
+# Can take aux space up to just less than len
+# Unguarded requires x->(-1) to precede all values in x
+def dropmerge{sort, guard}{x:pT, len:U, aux:pT} = {
+  def T = eltype{pT}
+  dropped := aux
+  drops:U = 0         # Total dropped
+  def drop{v} = { dropped <-{drops} v; ++drops }
+  cdrops:U = 0        # Consecutive drops
+  def max_cdrops = 8  # Number to allow before backtracking
+
+  keep:U = -U~~1      # Index of last kept value (not one past!)
+  i:U = 0             # Index to read
+  while (i < len) {
+    v := x->i; ++i    # Read next value
+    u := undefined{T} # Latest kept value
+    if ((guard and keep == -U~~1) or (u = x->keep) <= v) {
+      # u and v are in order, so keep going
+      ++keep; x <-{keep} v
+      cdrops = 0
+    # Otherwise, u and v are out of order: drop u or v?
+    } else if (cdrops == 0 and (not guard or keep > 0) and x->(keep-1) <= v) {
+      # Handle a single out-of-place u faster
+      drop{u}
+      x <-{keep} v
+    } else if (cdrops < max_cdrops) {
+      # Assume the new value is out-of-place
+      drop{v}
+      ++cdrops
+    } else {
+      # Dropped too many all because of one high value u.
+      # Go back and drop that one instead!
+      i -= cdrops + 1  # Dropped values are still here where we left them
+      drops -= cdrops
+      cdrops = 0
+      drop{u}
+      --keep
+      # TODO fast backtracking?
+    }
+  }
+
+  j := keep + 1  # Number of kept values
+  # Values past j are no longer needed, so use them as aux space
+  sort{dropped, drops, x+j}
+
+  # Custom merge: from end, expect drop < back by a lot
+  # Like an insertion sort where we don't reset the insertion point
+  def write{v} = { --i; x <-{i} v }  # i==len currently
+  while (drops > 0) {
+    # Pull another element from the back of the drop list
+    --drops; d := dropped->drops
+    # Find where to insert and make room
+    v:=undefined{T}; jn:=undefined{U}
+    while ((not guard or 0<j) and d < (v = x->(jn=j-1))) {
+      write{v}; j=jn
+    }
+    write{d}
+  }
+}

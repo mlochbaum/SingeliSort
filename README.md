@@ -15,6 +15,7 @@ Singeli sort will hybridize the following algorithms. Most have been implemented
 - Radix sort: mostly like [ska_sort_copy](https://github.com/skarupke/ska_sort)
 - Counting sort: see [section](https://github.com/mlochbaum/rhsort#counting-sort) in rhsort
 - [Robin Hood](https://github.com/mlochbaum/rhsort) sort
+- [Drop-Merge sort](https://github.com/emilk/drop-merge-sort)
 
 Other methods considered:
 

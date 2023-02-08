@@ -1,5 +1,5 @@
 # Guarded or unguarded insertion sort of len values at x
-# Unguarded requires x->(-1) to be precede all of these values
+# Unguarded requires x->(-1) to precede all of these values
 def insertion_sort{x:pT, len:U, guard} = {
   # First value's already in place; insert the others
   @for (xi in x over i from 1 to len) {
