@@ -32,7 +32,7 @@ def get_pivot{array:pT, n:U, getaux, sort} = {
 
     i:U = 0; while (i < n - (mask + 2 * gap)) add3{i, gap}
     ns := aux1 - aux
-    sort{aux, aux, aux1, ns, min_i32, 0}
+    sort{aux, aux, aux1, ns, ns*(width{eltype{pT}}/8), min_i32, 0}
     arr = aux
     ind = ns / 2
   }
@@ -43,7 +43,7 @@ def get_pivot{array:pT, n:U, getaux, sort} = {
 # Pointer layout credit to Scandum: https://github.com/scandum/fluxsort
 # Sort src, placing the result in dst and using space from aux
 # src may be equal to dst or aux
-def flux_loop{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, min:T, has_max:u1} = {
+def flux_loop{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, has_max:u1} = {
 
   # Partition: left side directly in dst with length l, includes pivots
   l := flux_partition{src, <=, piv, dst, aux, n}
@@ -57,7 +57,7 @@ def flux_loop{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, min:T, has_ma
     set{dst+l, aux, n-l} # Should probably write a reverse partition to avoid this
   } else {
     # Otherwise, sort the right-hand side, moving it from aux to dst
-    recur{aux, dst+l, aux, n-l, piv, has_max}
+    recur{aux, dst+l, aux, n-l, aux_bytes, piv, has_max}
   }
 
   # Left-hand side
@@ -66,11 +66,11 @@ def flux_loop{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, min:T, has_ma
     n = l
     has_max = 1
   } else {
-    recur{dst, dst, aux, l, min, 1}
+    recur{dst, dst, aux, l, aux_bytes, min, 1}
   }
 }
 
-flux32loop(src:*i32, dst:*i32, aux:*i32, n:u64, min:i32, has_max:u1) : void = {
+flux32loop(src:*i32, dst:*i32, aux:*i32, n:u64, aux_bytes:u64, min:i32, has_max:u1) : void = {
   while (u1~~1) {
     # Base case
     if (n < 32) {
@@ -81,7 +81,7 @@ flux32loop(src:*i32, dst:*i32, aux:*i32, n:u64, min:i32, has_max:u1) : void = {
     if (has_max) {
       # Distribution base cases
       range := u32 ~~ (dst->n - min)
-      if (n < (1<<32) and range < u32<~n) {
+      if (u64^~(range/4) < n and u64^~range < aux_bytes/(width{u64}/8)) {
         if (src != dst) set{dst, src, n}
         count_sort{dst, u32<~n, *u32~~aux, min, range + 1}
         return{}
@@ -91,10 +91,10 @@ flux32loop(src:*i32, dst:*i32, aux:*i32, n:u64, min:i32, has_max:u1) : void = {
     def recur = bind{call,flux32loop}
     def getaux{} = { a:=aux; if (a==src) a=dst; a }
     piv := get_pivot{src, n, getaux, recur}
-    flux_loop{recur,1, piv, src,dst,aux,n, min,has_max}
+    flux_loop{recur,1, piv, src,dst,aux,n,aux_bytes, min,has_max}
   }
 }
 
-flux32(x:*i32, n:u64, aux:*void) : void = {
-  flux32loop(x, x, *i32~~aux, n, min_i32, 0)
+flux32(x:*i32, n:u64, aux:*void, aux_bytes:u64) : void = {
+  flux32loop(x, x, *i32~~aux, n, aux_bytes, min_i32, 0)
 }
