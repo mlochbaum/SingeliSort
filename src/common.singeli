@@ -29,7 +29,9 @@ def dist{U,a:T,b:T} = U ^~ primtype{'u',width{T}} ~~ (b-a)
 
 # Try the given types to lower constant overhead on small arrays
 def index_options{sort, n:U, test, itypes} = {
-  def try{C} = { if (C<U and LIKELY{test{n,C}}) return{sort{C}} }
+  def done = makelabel{}
+  def try{C} = { if (C<U and LIKELY{test{n,C}}) { sort{C}; goto{done} } }
   each{try, itypes}
   sort{U}
+  setlabel{done}
 }

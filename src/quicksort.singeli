@@ -82,8 +82,15 @@ flux32loop(src:*i32, dst:*i32, aux:*i32, n:u64, aux_bytes:u64, min:i32, has_max:
       # Distribution base cases
       range := u32 ~~ (dst->n - min)
       if (u64^~(range/4) < n and u64^~range < aux_bytes/(width{u64}/8)) {
+        # Always sort in place on dst
+        # Counting sort could have a different src/dst, but if src isn't
+        # dst then it's equal to aux, and we need that space
         if (src != dst) set{dst, src, n}
         count_sort{dst, u32<~n, *u32~~aux, min, range + 1}
+        return{}
+      }
+      if (n <= (1<<16) and range < (1<<16)) {
+        radpack32(*u32~~src, *u32~~dst, u32<~n, *void~~aux, u32~~min)
         return{}
       }
     }

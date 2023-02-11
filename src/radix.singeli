@@ -98,11 +98,10 @@ def radix{x:pT, n:U, aux0} = {
 
 # Sort 32-bit data with a 16-bit range
 # In place except the counts in aux
-radpack32(x32:*u32, n:u32, aux:*void, min:u32) : void = {
-  x16 := *u16 ~~ x32
-  aux := x16 + n
-  @for (x16, x32 over n) x16 = u16<~(x32 - min)
-  def rad{C} = radix_inplace{x16, n, aux, *C~~aux}
+radpack32(src:*u32, dst:*u32, n:u32, aux:*void, min:u32) : void = {
+  x16 := *u16 ~~ dst
+  @for (x16, src over n) x16 = u16<~(src - min)
+  def rad{C} = radix_inplace{x16, n, x16 + n, *C~~aux}
   index_options{rad, n, radix_fits, tup{u8, u32}}
-  i:u32=n; while (i>0) { --i; x32 <-{i} min + u32^~(x16->i) }
+  i:u32=n; while (i>0) { --i; dst <-{i} min + u32^~(x16->i) }
 }
