@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#define sortname "rhsort"
+#define sortname "32sort"
 
 // Options for test to perform:
 #if RANGES  // Small range
@@ -32,7 +32,7 @@ static U monoclock(void) {
 
 static void sort32(T *x, U n) {
   T *aux = malloc(8*n*sizeof(T));
-  rhsort(x, n, aux);
+  flux32(x, n, aux, 8*n*sizeof(T));
   free(aux);
 }
 

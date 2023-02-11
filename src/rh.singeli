@@ -79,20 +79,35 @@ def stealblocks{start:U, end:U, buf:*T, dst:*T, pos, empty:T} = {
   }
 }
 
+# Get value to index conversion
+# Modifies r!
+def getposfn{minv, n:U, r} = {
+  sh:U = 0                              # Contract to fit range
+  while (r>5*n) { ++sh; r=r>>1 }        # Shrink to stay at O(n) memory
+  {v} => dist{U,minv,v} >> sh
+}
+
 # Statistical check of samples to make sure it's not too clumpy
 def checkdist{sample, num:U, pos} = {
   prev := pos{sample->0}
   score:U = 0
+  good:u1 = 0  # result
+  def bad = makelabel{}
   @for (sample over _ from 1 to num) {
     next:=pos{sample}; d:=next-prev; prev=next
-    if (d<16) { score+=16-d; if (score>=60+num/6) return{0} }
+    if (d<16) { score+=16-d; if (score >= 60+num/6) goto{bad} }
   }
+  good = 1
+  setlabel{bad}
+  good
+}
+def checkdist{sample, num:U, minv:T, n:U, r} = {
+  def pos = getposfn{minv, n, clone{r}}
+  checkdist{sample, num, pos}
 }
 
 def rh_main{merge, merge_from, alloc, check}{x:*T, n:U, minv:T, maxv, r} = {
-  sh:U = 0                              # Contract to fit range
-  while (r>5*n) { ++sh; r=r>>1 }        # Shrink to stay at O(n) memory
-  def pos{v} = dist{U,minv,v} >> sh
+  def pos = getposfn{minv, n, r}
 
   # Goes down to BLOCK once we know we have to merge
   sz:U = r + thresh_init                # Buffer size
@@ -125,4 +140,23 @@ rh_sort{U, T, merge, merge_from, range}(x:*T, n:U, aux:*T) : void = {
   } else {
     rh_main{merge, merge_from, {sz}=>aux, {pos}=>1}{x, n, minv, maxv, r}
   }
+}
+
+def try_rh{src:pT, dst:pT, n:U, aux:pT, aux_bytes:U, minv, maxv, merge, merge_from} = {
+  na := aux_bytes / (width{eltype{pT}}/8)
+  def exit = makelabel{}
+  def req{cond} = { if (not cond) goto{exit} }
+  req{n <= 1<<16}              # Partitioning is better
+  req{2*n+n/2 <= na}           # Not enough space, quick rejection
+
+  def alloc{sz} = {
+    req{sz<=na}
+    if (dst != src) set{dst, src, n} # Finally we commit and clear up aux
+    aux
+  }
+  r:U = dist{U, minv, maxv}
+  rh_main{merge, merge_from, alloc, {pos}=>1}{dst, n, minv, maxv, r}
+  
+  return{}
+  setlabel{exit}
 }

@@ -5,7 +5,7 @@ include './arith'  # Logs and square roots
 
 def min_i32 = i32 ~~ (-1<<31)
 
-def get_pivot{array:pT, n:U, getaux, sort} = {
+def get_pivot{array:pT, n:U, getaux, sort, proc_pivots} = {
   # log_2 of minimum size for sampling
   def sl0 = 14
   # Output array and index
@@ -33,6 +33,7 @@ def get_pivot{array:pT, n:U, getaux, sort} = {
     i:U = 0; while (i < n - (mask + 2 * gap)) add3{i, gap}
     ns := aux1 - aux
     sort{aux, aux, aux1, ns, ns*(width{eltype{pT}}/8), min_i32, 0}
+    proc_pivots{aux, ns}
     arr = aux
     ind = ns / 2
   }
@@ -97,7 +98,12 @@ flux32loop(src:*i32, dst:*i32, aux:*i32, n:u64, aux_bytes:u64, min:i32, has_max:
 
     def recur = bind{call,flux32loop}
     def getaux{} = { a:=aux; if (a==src) a=dst; a }
-    piv := get_pivot{src, n, getaux, recur}
+    rh_approved:u1 = 0
+    def proc_pivots{pivots, num} = {
+      if (has_max) rh_approved = checkdist{pivots, num, min, n, u64^~u32~~(dst->n - min)}
+    }
+    piv := get_pivot{src, n, getaux, recur, proc_pivots}
+    if (rh_approved) try_rh{src, dst, n, aux, aux_bytes, min, dst->n, merge_chk, merge_from{merge_chk}}
     flux_loop{recur,1, piv, src,dst,aux,n,aux_bytes, min,has_max}
   }
 }
