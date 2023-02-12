@@ -31,8 +31,9 @@ static U monoclock(void) {
 #include "sort.c"
 
 static void sort32(T *x, U n) {
-  T *aux = malloc(8*n*sizeof(T));
-  flux32(x, n, aux, 8*n*sizeof(T));
+  U a = (n + 4*(n<1<<16 ? n : 1<<16))*sizeof(T);
+  T *aux = malloc(a);
+  flux32(x, n, aux, a);
   free(aux);
 }
 

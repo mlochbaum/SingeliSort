@@ -91,11 +91,12 @@ def getposfn{minv, n:U, r} = {
 def checkdist{sample, num:U, pos} = {
   prev := pos{sample->0}
   score:U = 0
+  threshold := 60 + num/6
   good:u1 = 0  # result
   def bad = makelabel{}
   @for (sample over _ from 1 to num) {
     next:=pos{sample}; d:=next-prev; prev=next
-    if (d<16) { score+=16-d; if (score >= 60+num/6) goto{bad} }
+    if (d<16) { score+=16-d; if (score >= threshold) goto{bad} }
   }
   good = 1
   setlabel{bad}
