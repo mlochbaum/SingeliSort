@@ -68,7 +68,7 @@ def sort_8_parity = sort_8_16_parity{
 }
 def sort_16_parity = sort_8_16_parity{
   16, sort_4_quad,
-  {d,s}=>parity_merge{eltype{type{d}}}(d, s, 8, 16)
+  {d,s}=>parity_merge{eltype{type{d}}, 0}(d, s, 8, 16)
 }
 
 def sort_lt32{dst, src, n:U, max} = {

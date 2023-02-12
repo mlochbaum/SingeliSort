@@ -47,10 +47,16 @@ def parity_merge_const{n, dst, src} = {
 }
 
 # Merge halves of array
-parity_merge{T}(dst:*T, src:*T, half:usize, n:usize) : void = {
+parity_merge{T, handle_odd}(dst:*T, src:*T, half:usize, n:usize) : void = {
   lpos := src           ; rpos := src + half ; dpos := dst
   lneg := src + half - 1; rneg := src + n - 1; dneg := dst + n - 1
 
+  if (handle_odd and n%2) {
+    l := lpos->0; r := rpos->0
+    if (l <= r) { dst<-l; ++lpos }
+    else        { dst<-r; ++rpos }
+    ++dpos
+  }
   @for (half-1) {
     parity_pos{lpos, rpos, dpos}
     parity_neg{lneg, rneg, dneg}
@@ -65,7 +71,7 @@ def merge_chk{a:pT, l:U, n:U, aux:pT} = {
   if (a->(l-1) <= a->l) {
     0
   } else if (a->(n-1) < a->0 and l+l==n) {
-    b := a+l;
+    b := a+l
     map{<->, a, b, l}
   } else {
     branch_merge{a,l,n,aux}
@@ -83,4 +89,42 @@ def merge_from{merge}{x:pT, n:U, aux:pT, block} = {
     }
     w = ww
   }
+}
+
+# A simple bottom-down and not-very-adaptive merge sort using
+# branchless merges in sets of 4
+piposort{T}(x:*T, n:usize, aux:*T) : void = {
+  if (n < 32) {
+    sort_lt32{x, n}
+    return{}
+  }
+  # Approximate halves n = h1+h2 and quarters h1=q1+q2, h2=q3+q4
+  h1 := n / 2;  q1 := h1 / 2; q2 := h1 - q1
+  h2 := n - h1; q3 := h2 / 2; q4 := h2 - q3
+
+  # Sort each quarter
+  def recur = piposort{T}
+  recur(x          , q1, aux)
+  recur(x + q1     , q2, aux)
+  recur(x + h1     , q3, aux)
+  recur(x + h1 + q3, q4, aux)
+
+  # If each boundary between quarters is ordered, we're done
+  def ord{i} = x->(i-1) <= x->i
+  if (ord{q1} and ord{h1} and ord{h1 + q3}) return{}
+
+  # Also check for reversed quarters
+  if (x->0 > x->(h1-1) and x->q1 > x->(h1+q3-1) and x->h1 > x->(n-1)) {
+    set{aux, x, h1}
+    set{x,     x + h1 + q3, q4}
+    set{x + q4,     x + h1, q3}
+    set{x + h2,   aux + q1, q2}
+    set{x + h2 + q2,   aux, q1}
+    return{}
+  }
+
+  def merge = parity_merge{T, 1}
+  merge(aux     , x     , q1, h1)
+  merge(aux + h1, x + h1, q3, h2)
+  merge(x       , aux   , h1, n)
 }
