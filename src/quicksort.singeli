@@ -46,17 +46,32 @@ def flux_loop{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, 
 
   # Partition: left side directly in dst with length l, includes pivots
   l := flux_partition{src, <=, piv, dst, aux, n}
+  r := n - l  # Values on the right
+  m := l      # Values not on the right
 
-  # Right-hand side
-  # If pivot is the maximum value, everything ends in dst
-  if (l == n) {
+  # Never recurse on a partition with more than this many values
+  most := n - n/16
+
+  # If most values end up on the left, they're probably mostly pivots
+  if (l > most) {
     # Partition again with pivots on the right
     # This bounds performance by O(k*n) for only k unique values
-    l = flux_partition{dst, <, piv, dst, aux, n}
-    set{dst+l, aux, n-l} # Should probably write a reverse partition to avoid this
+    l = flux_partition{dst, <, piv, dst, aux+r, m}
+    set{dst+l, aux+r, m-l} # Should probably write a reverse partition to avoid this
+  }
+
+  # Sort the right-hand side, moving it from aux to dst
+  rdst := dst + m
+  if (r > most) { # Unbalanced
+    set{rdst, aux, r}
+    piposort{T}(rdst, r, aux)
   } else {
-    # Otherwise, sort the right-hand side, moving it from aux to dst
-    recur{aux, dst+l, aux, n-l, aux_bytes, piv, rh_approved}
+    recur{aux, rdst, aux, r, aux_bytes, piv, rh_approved}
+  }
+
+  if (l > most) { # Unbalanced
+    piposort{T}(dst, l, aux)
+    return{}
   }
 
   # Left-hand side
@@ -64,7 +79,7 @@ def flux_loop{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, 
     src = dst
     n = l
   } else {
-    recur{dst, dst, aux, l, aux_bytes, min, 1, rh_approved}
+    recur{dst, dst, aux, l, aux_bytes, min, rh_approved}
   }
 }
 
