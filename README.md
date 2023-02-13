@@ -8,7 +8,7 @@ Compile with:
 
 Singeli sort will hybridize the following algorithms. Most have been implemented with performance matching the C versions, but there's more work in tying them together.
 
-- Quicksort partitioning from [fluxsort](https://github.com/scandum/fluxsort)
+- Quicksort partitioning from [fluxsort](https://github.com/scandum/fluxsort) and [crumsort](https://github.com/scandum/crumsort)
 - Merging: [piposort](https://github.com/scandum/piposort) and parts of [quadsort](https://github.com/scandum/quadsort)
 - Outer merge layer: [glidesort](https://github.com/orlp/glidesort) (powersort rules made lazy to defer to quicksort when possible)
 - Small-array sorting: quadsort
@@ -17,7 +17,7 @@ Singeli sort will hybridize the following algorithms. Most have been implemented
 - [Robin Hood](https://github.com/mlochbaum/rhsort) sort
 - [Drop-Merge sort](https://github.com/emilk/drop-merge-sort)
 
-Other methods considered:
+Other methods to consider later:
 
-- In-place partitioning, [crumsort](https://github.com/scandum/crumsort) and [pdqsort](https://github.com/orlp/pdqsort). I think the glidesort method is a good enough way to get memory use down that I don't consider testing these to be a priority.
+- In-place partitioning with [pdqsort](https://github.com/orlp/pdqsort). Slower than crumsort but it does adapt to mostly-sorted data well. Kills patterns.
 - Other glidesort methods: interleaved merges and bidirectional partitioning, small-array sort. These have not yet been demonstrated to improve performance relative to fluxsort, and there are indications that they slow things down on older processors in addition to bumping up code size. I'll wait for the paper explaining choices made before looking into them further.

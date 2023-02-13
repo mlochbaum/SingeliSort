@@ -16,3 +16,32 @@ def flux_partition{src:*T, cmp, piv:T, dst_true:*T, dst_false:*T, n:U} = {
   }
   l
 }
+
+# Unstable in-place partitioning
+def fulcrum_partition{x:*T, cmp, piv:T, aux:*T, n:U} = {
+  def bl = 16
+  set{aux,      x,          bl}
+  set{aux + bl, x + n - bl, bl}
+
+  dst_left  := x;          src_left  := dst_left  + bl
+  dst_right := x + n - 1;  src_right := dst_right - bl
+
+  m:U = 0
+  def put{ptr, update} = {
+    v := *ptr
+    c := cmp{v, piv}
+    dst_left  <-{m} v
+    dst_right <-{m} v; --dst_right
+    update{ptr}
+    m += c
+  }
+  def part{num} = {
+    if (src_left - dst_left - m <= bl) { @for (num) put{src_left , ++} }
+    else                               { @for (num) put{src_right, --} }
+  }
+
+  @for (n / bl - 2) part{bl}
+  part{n % bl}
+  @for (2*bl) put{aux, ++}
+  m
+}
