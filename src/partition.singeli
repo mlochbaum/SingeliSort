@@ -18,30 +18,47 @@ def flux_partition{src:*T, cmp, piv:T, dst_true:*T, dst_false:*T, n:U} = {
 }
 
 # Unstable in-place partitioning
+# Fulcrum partition works from the outside in, alternating sides as
+# necessary to maintain a small gap both on the left and the right.
+# It's faster than fluxsort partitioning for large arrays. I believe
+# this is because there are two active regions
+#   src_left/dst_left, src_right/dst_right
+# versus the three in flux_partition
+#   src, dst_true, dst_false
+# leading to less waiting for the cache
 def fulcrum_partition{x:*T, cmp, piv:T, aux:*T, n:U} = {
+  # Partition bl elements at a time in the main loop
   def bl = 16
   dst_left  := x;      src_left  := dst_left  + bl
   dst_right := x + n;  src_right := dst_right - bl
 
+  # Create the initial gap between src and dst
   set{aux,      dst_left,  bl}
   set{aux + bl, src_right, bl}
 
-  m:U = 0
+  # Branchless move, as in flux_partition except left and right parts
+  # move in opposite directions
+  # The shared index l allows us to not increment dst_left,
+  # and unconditionally decrement dst_right
+  l:U = 0  # Number of values placed on the left so far
   def put{ptr} = {
     v := *ptr
     c := cmp{v, piv}
-    dst_left  <-{m} v; --dst_right
-    dst_right <-{m} v
-    m += c
+    dst_left  <-{l} v; --dst_right
+    dst_right <-{l} v
+    l += c
   }
-  def part{num} = {
-    diff := src_left - dst_left - m
-    if (diff < bl) { @for (num) { put{src_left }; ++src_left  } }
+  # Perform num moves at once, where num <= bl at every call
+  # Since the total gap is 2*bl, one side or the other must have room
+  # That's the side we don't partition from!
+  def part{for, num} = {
+    diff := src_left - dst_left - l  # Gap on left side
+    if (diff < bl) { @for (num) { put{src_left};  ++src_left  } }
     else           { @for (num) { --src_right; put{src_right} } }
   }
 
-  @for (n / bl - 2) part{bl}
-  part{n % bl}
-  @for (2*bl) { put{aux}; ++aux }
-  m
+  @for (n / bl - 2) part{for_const, bl} # Main loop, unrolled
+  part{for, n % bl}                     # Finish up
+  @for (2*bl) { put{aux}; ++aux }       # Partition cleared values
+  l
 }

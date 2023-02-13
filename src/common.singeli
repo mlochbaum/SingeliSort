@@ -25,7 +25,8 @@ def findrange{arr, len} = {
 }
 def readrange{arr, len} = tup{arr->(-1), arr->len}
 
-def dist{U,a:T,b:T} = U ^~ primtype{'u',width{T}} ~~ (b-a)
+def dist{a:T, b:T} = primtype{'u',width{T}} ~~ (b-a)
+def dist{U,a,b} = U ^~ dist{a,b}
 
 # Try the given types to lower constant overhead on small arrays
 def index_options{sort, n:U, test, itypes} = {

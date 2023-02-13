@@ -3,6 +3,31 @@ include './median'
 include './xorshift'
 include './arith'  # Logs and square roots
 
+def base_cases{src:*T, dst:*T, aux:*T, n:U, aux_bytes:usize, min:T} = {
+  # Short array
+  if (n < 32) {
+    sort_lt32{dst, src, n}
+    return{}
+  }
+
+  # Distribution base cases
+  if (isint{T}) {
+    range := dist{min, dst->n}
+    if (U^~(range/4) < n and U^~range < aux_bytes/bytes{U}) {
+      # Always sort in place on dst
+      # Counting sort could have a different src/dst, but if src isn't
+      # dst then it's equal to aux, and we need that space
+      if (src != dst) set{dst, src, n}
+      count_sort{dst, u32<~n, *u32~~aux, min, u32<~range + 1}
+      return{}
+    }
+    if (width{T} == 32 and n <= (1<<16) and range < (1<<16)) {
+      radpack32(*u32~~src, *u32~~dst, u32<~n, *void~~aux, u32~~min)
+      return{}
+    }
+  }
+}
+
 # Robin Hood approval state
 def RH_UNTRIED = 0
 def RH_APPROVED = 2
@@ -42,11 +67,9 @@ def get_pivot{array:pT, n:U, getaux, sort, proc_pivots, rh_state} = {
   arr -> ind
 }
 
-# Quicksort loop with unstable partitioning
-# Pointer layout credit to Scandum: https://github.com/scandum/fluxsort
-# Sort src, placing the result in dst and using space from aux
+# Fluxsort recurrence: partition, handle right then left side
 # src may be equal to dst or aux
-def flux_loop{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:usize, min:T, rh_state:u8} = {
+def flux_recur{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:usize, min:T, rh_state:u8} = {
 
   # Partition: left side directly in dst with length l, includes pivots
   l:U = 0
@@ -54,7 +77,9 @@ def flux_loop{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:usi
   if (LIKELY{n < 1<<14}) {
     l = flux_partition{src, <=, piv, dst, aux, n}
   } else {
-    l = fulcrum_partition{dst, <=, piv, aux, n}
+    # Previous partitions must have used fulcrum too, so we haven't yet
+    # touched aux, and src==dst
+    l = fulcrum_partition{dst, <=, piv, aux, n}  # (unstable)
     rsrc = dst + l
   }
   r := n - l  # Values on the right
@@ -85,46 +110,21 @@ def flux_loop{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:usi
     return{}
   }
 
-  # Left-hand side
-  if (tailcall) { # Another call on the original arguments follows
-    src = dst
-    n = l
-  } else {
-    recur{dst, dst, aux, l, aux_bytes, min, rh_state}
-  }
+  # Left-hand side by tail call
+  src = dst
+  n = l
 }
 
 flux_loop{U, T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:usize, min:T, rh_state:u8) : void = {
-  def uT = primtype{'u',width{T}}
   while (u1~~1) {
-    # Base case
-    if (n < 32) {
-      sort_lt32{dst, src, n}
-      return{}
-    }
+    base_cases{src, dst, aux, n, aux_bytes, min}
 
-    # Distribution base cases
-    if (isint{T}) {
-      range := uT ~~ (dst->n - min)
-      if (U^~(range/4) < n and U^~range < aux_bytes/bytes{U}) {
-        # Always sort in place on dst
-        # Counting sort could have a different src/dst, but if src isn't
-        # dst then it's equal to aux, and we need that space
-        if (src != dst) set{dst, src, n}
-        count_sort{dst, u32<~n, *u32~~aux, min, u32<~range + 1}
-        return{}
-      }
-      if (width{T} == 32 and n <= (1<<16) and range < (1<<16)) {
-        radpack32(*u32~~src, *u32~~dst, u32<~n, *void~~aux, u32~~min)
-        return{}
-      }
-    }
-
+    # Find pivot and check for RH sorting
     def getaux{} = { a:=aux; if (a==src) a=dst; a }
     def proc_pivots{pivots, num} = {
       if (isint{T} and n<=1<<17 and rh_state!=RH_APPROVED) {
         # 1 if tried and not approved, 2 for RH_APPROVED
-        rh_state = 1 + u8^~checkdist{pivots, num, min, n, U^~uT~~(dst->n - min)}
+        rh_state = 1 + u8^~checkdist{pivots, num, min, n, dist{U, min, dst->n}}
       }
     }
     def fn{gen} = bind{call, gen{U,T}}
@@ -132,7 +132,9 @@ flux_loop{U, T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:usize, min:T, rh_state:u8
     if (isint{T} and rh_state == RH_APPROVED) {
       try_rh{src, dst, n, aux, aux_bytes, min, dst->n, merge_chk, merge_from{merge_chk}}
     }
-    flux_loop{fn{flux_loop},1, piv, src,dst,aux,n,aux_bytes, min,rh_state}
+
+    # Then finish sorting; loop around for tail call
+    flux_recur{fn{flux_loop},1, piv, src,dst,aux,n,aux_bytes, min,rh_state}
   }
 }
 
@@ -141,6 +143,8 @@ flux_sort{U, T}(x:*T, n:U, aux:*void, aux_bytes:usize) : void = {
     piposort{T}(x, n, *T~~aux)
     return{}
   }
+
+  # Find the minimum value and index of last maximum
   def block = 1024
   min := x->0; max := min
   i:U = 0; imax:=i
@@ -152,14 +156,14 @@ flux_sort{U, T}(x:*T, n:U, aux:*void, aux_bytes:usize) : void = {
       if (x < min) min=x
       if (x > blm) blm=x
     }
-    if (blm > max) { max=blm; imax=i0; }
+    if (blm >= max) { max=blm; imax=i; } # Save block index; refine later
   } while (i < n)
 
   if (min == max) return{}
-  # TODO unstable
-  while (x->imax < max) ++imax
-  x <-{imax} x->(n-1)
+  do { --imax } while (x->imax < max)
+  x <-{imax} x->(n-1)  # (unstable)
   x <-{n-1} max
 
+  # Now sort
   flux_loop{U,T}(x, x, *T~~aux, n-1, aux_bytes, min, 0)
 }
