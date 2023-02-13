@@ -20,28 +20,28 @@ def flux_partition{src:*T, cmp, piv:T, dst_true:*T, dst_false:*T, n:U} = {
 # Unstable in-place partitioning
 def fulcrum_partition{x:*T, cmp, piv:T, aux:*T, n:U} = {
   def bl = 16
-  set{aux,      x,          bl}
-  set{aux + bl, x + n - bl, bl}
+  dst_left  := x;      src_left  := dst_left  + bl
+  dst_right := x + n;  src_right := dst_right - bl
 
-  dst_left  := x;          src_left  := dst_left  + bl
-  dst_right := x + n - 1;  src_right := dst_right - bl
+  set{aux,      dst_left,  bl}
+  set{aux + bl, src_right, bl}
 
   m:U = 0
-  def put{ptr, update} = {
+  def put{ptr} = {
     v := *ptr
     c := cmp{v, piv}
-    dst_left  <-{m} v
-    dst_right <-{m} v; --dst_right
-    update{ptr}
+    dst_left  <-{m} v; --dst_right
+    dst_right <-{m} v
     m += c
   }
   def part{num} = {
-    if (src_left - dst_left - m <= bl) { @for (num) put{src_left , ++} }
-    else                               { @for (num) put{src_right, --} }
+    diff := src_left - dst_left - m
+    if (diff < bl) { @for (num) { put{src_left }; ++src_left  } }
+    else           { @for (num) { --src_right; put{src_right} } }
   }
 
   @for (n / bl - 2) part{bl}
   part{n % bl}
-  @for (2*bl) put{aux, ++}
+  @for (2*bl) { put{aux}; ++aux }
   m
 }
