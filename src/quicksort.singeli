@@ -34,7 +34,7 @@ def get_pivot{array:pT, n:U, getaux, sort, proc_pivots, rh_state} = {
 
     i:U = 0; while (i < n - (mask + 2 * gap)) add3{i, gap}
     ns := aux1 - aux
-    sort{aux, ns, *void~~aux1, ns*(width{eltype{pT}}/8)}
+    sort{aux, ns, *void~~aux1, ns*bytes{eltype{pT}}}
     proc_pivots{aux, ns}
     arr = aux
     ind = ns / 2
@@ -46,7 +46,7 @@ def get_pivot{array:pT, n:U, getaux, sort, proc_pivots, rh_state} = {
 # Pointer layout credit to Scandum: https://github.com/scandum/fluxsort
 # Sort src, placing the result in dst and using space from aux
 # src may be equal to dst or aux
-def flux_loop{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8} = {
+def flux_loop{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:usize, min:T, rh_state:u8} = {
 
   # Partition: left side directly in dst with length l, includes pivots
   l := flux_partition{src, <=, piv, dst, aux, n}
@@ -87,7 +87,8 @@ def flux_loop{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, 
   }
 }
 
-flux32loop{}(src:*i32, dst:*i32, aux:*i32, n:u64, aux_bytes:u64, min:i32, rh_state:u8) : void = {
+flux_loop{U, T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:usize, min:T, rh_state:u8) : void = {
+  def uT = primtype{'u',width{T}}
   while (u1~~1) {
     # Base case
     if (n < 32) {
@@ -96,44 +97,46 @@ flux32loop{}(src:*i32, dst:*i32, aux:*i32, n:u64, aux_bytes:u64, min:i32, rh_sta
     }
 
     # Distribution base cases
-    range := u32 ~~ (dst->n - min)
-    if (u64^~(range/4) < n and u64^~range < aux_bytes/(width{u64}/8)) {
-      # Always sort in place on dst
-      # Counting sort could have a different src/dst, but if src isn't
-      # dst then it's equal to aux, and we need that space
-      if (src != dst) set{dst, src, n}
-      count_sort{dst, u32<~n, *u32~~aux, min, range + 1}
-      return{}
-    }
-    if (n <= (1<<16) and range < (1<<16)) {
-      radpack32(*u32~~src, *u32~~dst, u32<~n, *void~~aux, u32~~min)
-      return{}
+    if (isint{T}) {
+      range := uT ~~ (dst->n - min)
+      if (U^~(range/4) < n and U^~range < aux_bytes/bytes{U}) {
+        # Always sort in place on dst
+        # Counting sort could have a different src/dst, but if src isn't
+        # dst then it's equal to aux, and we need that space
+        if (src != dst) set{dst, src, n}
+        count_sort{dst, u32<~n, *u32~~aux, min, u32<~range + 1}
+        return{}
+      }
+      if (width{T} == 32 and n <= (1<<16) and range < (1<<16)) {
+        radpack32(*u32~~src, *u32~~dst, u32<~n, *void~~aux, u32~~min)
+        return{}
+      }
     }
 
     def getaux{} = { a:=aux; if (a==src) a=dst; a }
     def proc_pivots{pivots, num} = {
-      if (n<=1<<17 and rh_state!=RH_APPROVED) {
+      if (isint{T} and n<=1<<17 and rh_state!=RH_APPROVED) {
         # 1 if tried and not approved, 2 for RH_APPROVED
-        rh_state = 1 + u8^~checkdist{pivots, num, min, n, u64^~u32~~(dst->n - min)}
+        rh_state = 1 + u8^~checkdist{pivots, num, min, n, U^~uT~~(dst->n - min)}
       }
     }
-    piv := get_pivot{src, n, getaux, bind{call,flux32}, proc_pivots, rh_state}
-    if (rh_state == RH_APPROVED) {
+    def fn{gen} = bind{call, gen{U,T}}
+    piv := get_pivot{src, n, getaux, fn{flux_sort}, proc_pivots, rh_state}
+    if (isint{T} and rh_state == RH_APPROVED) {
       try_rh{src, dst, n, aux, aux_bytes, min, dst->n, merge_chk, merge_from{merge_chk}}
     }
-    flux_loop{bind{call,flux32loop{}},1, piv, src,dst,aux,n,aux_bytes, min,rh_state}
+    flux_loop{fn{flux_loop},1, piv, src,dst,aux,n,aux_bytes, min,rh_state}
   }
 }
 
-flux32(x:*i32, n:u64, aux:*void, aux_bytes:u64) : void = {
+flux_sort{U, T}(x:*T, n:U, aux:*void, aux_bytes:usize) : void = {
   if (n <= 192) {
-    piposort{i32}(x, n, *i32~~aux)
+    piposort{T}(x, n, *T~~aux)
     return{}
   }
-  min := i32 ~~ (-1<<31)
   def block = 1024
-  min = x->0; max := min
-  i:u64 = 0; imax:=i
+  min := x->0; max := min
+  i:U = 0; imax:=i
   do {
     i0 := i
     i += block; if (i > n) i = n
@@ -151,5 +154,5 @@ flux32(x:*i32, n:u64, aux:*void, aux_bytes:u64) : void = {
   x <-{imax} x->(n-1)
   x <-{n-1} max
 
-  flux32loop{}(x, x, *i32~~aux, n-1, aux_bytes, min, 0)
+  flux_loop{U,T}(x, x, *T~~aux, n-1, aux_bytes, min, 0)
 }

@@ -144,7 +144,7 @@ rh_sort{U, T, merge, merge_from, range}(x:*T, n:U, aux:*T) : void = {
 }
 
 def try_rh{src:pT, dst:pT, n:U, aux:pT, aux_bytes:U, minv, maxv, merge, merge_from} = {
-  na := aux_bytes / (width{eltype{pT}}/8)
+  na := aux_bytes / bytes{eltype{pT}}
   def exit = makelabel{}
   def req{cond} = { if (not cond) goto{exit} }
   req{n <= 1<<16}              # Partitioning is better
