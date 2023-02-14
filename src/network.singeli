@@ -1,0 +1,68 @@
+# Network sorting: sort by ordering pairs of values in a fixed sequence
+# With a branchless swap the entire sort involves no branching
+# These networks also have a small depth, or number of layers
+# Swaps within a layer are subject to instruction-level parallelization
+
+# Not stable! Stable networks are mergesort-like and much bigger
+
+# The networks here are all proven optimal in depth, but the 16-value
+# network is not known to be optimal in number of comparisons
+
+# The first layer in each network covers all values, so if source and
+# destination differ, move from src to dst in that layer (i_move below)
+
+# Branchlessly order values at i and j while moving from src to dst
+local def order{dst, src, i, j} = {
+  a := src->i; b := src->j
+  x := (a^b) & - type{a}^~(a>b)
+  dst <-{i} x^a
+  dst <-{j} x^b
+}
+# Perform all swaps
+local def network_sort{i_move, i_inplace}{dst, src} = {
+  def run{s, i} = each{bind{order, dst, s}, ...flip{i}}
+  run{src, i_move}    # First round, move src to dst while swapping
+  run{dst, i_inplace} # Now just swap
+}
+
+# Now we can write our index lists out all pretty
+local oper <> tup infix none 90
+
+# https://bertdobbelaere.github.io/sorting_networks.html#N4L5D3
+def network_sort_4 = network_sort{
+  tup{0<>2, 1<>3},
+  tup{0<>1, 2<>3,
+      1<>2}
+}
+# https://bertdobbelaere.github.io/sorting_networks.html#N8L19D6
+def network_sort_8 = network_sort{
+ tup{0<>2, 1<>3, 4<>6, 5<>7},
+ tup{0<>4, 1<>5, 2<>6, 3<>7,
+     0<>1, 2<>3, 4<>5, 6<>7,
+     2<>4, 3<>5, 1<>4, 3<>6,
+     1<>2, 3<>4, 5<>6}
+}
+# https://bertdobbelaere.github.io/sorting_networks.html#N12L39D9
+def network_sort_12 = network_sort{
+  tup{0<>8, 1<>7, 2<>6, 3<>11, 4<>10, 5<>9},
+  tup{0<>2, 1<>4, 3<>5, 6<>8, 7<>10, 9<>11,
+      0<>1, 2<>9, 4<>7, 5<>6, 10<>11,
+      1<>3, 2<>7, 4<>9, 8<>10,
+      0<>1, 2<>3, 4<>5, 6<>7, 8<>9, 10<>11,
+      1<>2, 3<>5, 6<>8, 9<>10,
+      2<>4, 3<>6, 5<>8, 7<>9,
+      1<>2, 3<>4, 5<>6, 7<>8, 9<>10}
+}
+# https://bertdobbelaere.github.io/sorting_networks.html#N16L60D10
+def network_sort_16 = network_sort{
+  tup{0<>13, 1<>12, 2<>15, 3<>14, 4<>8, 5<>6, 7<>11, 9<>10},
+  tup{0<>5, 1<>7, 2<>9, 3<>4, 6<>13, 8<>14, 10<>15, 11<>12,
+      0<>1, 2<>3, 4<>5, 6<>8, 7<>9, 10<>11, 12<>13, 14<>15,
+      0<>2, 1<>3, 4<>10, 5<>11, 6<>7, 8<>9, 12<>14, 13<>15,
+      1<>2, 3<>12, 4<>6, 5<>7, 8<>10, 9<>11, 13<>14,
+      1<>4, 2<>6, 5<>8, 7<>10, 9<>13, 11<>14,
+      2<>4, 3<>6, 9<>12, 11<>13,
+      3<>5, 6<>8, 7<>9, 10<>12,
+      3<>4, 5<>6, 7<>8, 9<>10, 11<>12,
+      6<>7, 8<>9}
+}
