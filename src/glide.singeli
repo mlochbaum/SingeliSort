@@ -1,0 +1,114 @@
+# Return a generator that gets depth
+def powersort_init{ns} = {
+  n := u64^~ns
+  scale := (n + ((1<<62) - 1)) / n
+  def merge_tree_depth{mid, nl, nr} = {
+    mid2 := 2 * (u64^~mid)
+    u64^~leading_zeros{(scale * (mid2 - u64^~nl)) ^ (scale * (mid2 + u64^~nr))}
+  }
+}
+
+glide_sort{U, T, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
+
+  def MIN_RUN = 64
+  def base_sort{x, n} = sort(x, n, aux, *u8~~stack - *u8~~aux)
+  def merge_2{x, l, r} = branch_merge{x, clone{l}, l+r, *T~~aux}
+
+  # A logical run consists of a length (e.g. nl) and sortedness (sl)
+  # The starting position is maintained separately
+  # Sortedness indicates
+  #   0 if unsorted
+  #   mid for two sorted sequences
+  #   ~0 if sorted (length is also viable but this is easier)
+  def SORTED = (1 << width{U}) - 1
+
+  # Run of length at most r starting at x
+  # Modify r to give the length of the run, and return its sortedness
+  def new_run{x, r:U} = {
+    s:U = 0
+    def done = makelabel{}
+    if (r >= MIN_RUN) {
+      reverse := x->0 > x->1 # Run is descending
+      l:U = 2                # Run length
+      def follow_run{cmp} = {
+        while (l < r and cmp{x->(l-1), x->l}) ++l
+      }
+      if (not reverse) follow_run{<=}; else follow_run{>}
+
+      if (l >= MIN_RUN) {
+        if (reverse) {
+          xr := x + l-1
+          @for (i to l/2) x+i <-> xr-i
+        }
+        r = l; s = SORTED
+        goto{done}
+      }
+      r = MIN_RUN
+    }
+    if (eager) {
+      piposort{T}(x, r, *T~~aux)
+      s = SORTED
+    }
+    setlabel{done}
+    s
+  }
+
+  def sort_run{x, n, s} = {
+    if      (s == 0) base_sort{x, n}
+    else if (s < n)  merge_2{x, s, n-s}
+  }
+
+  # Modify xp, nr/sr to merge in nl/sl on the left
+  def logical_merge{xp, nl, sl, nr, sr} = {
+    xr := xp
+    xp -= nl  # Point to new run start
+    if ((sl | sr) == 0) { # Both unsorted (TODO check aux_bytes)
+      sr = 0
+    } else {
+      s_min := sl; if (sr < s_min) s_min = sr
+      if (s_min == 0) { # One unsorted: sort any unsorted halves
+        if (sr == 0) { base_sort{xr, nr}; sr = SORTED; s_min = sl }
+        if (sl == 0) { base_sort{xp, nl}; sl = SORTED; s_min = sr }
+      }
+      # Temp: straightforward merge
+      merge_2{xp, nl, nr}
+      sr = SORTED
+    }
+    nr += nl
+  }
+
+  def merge_depth = powersort_init{n}
+
+  # The merge stack has a frame for each defined run
+  stack_top := *U~~(*u8~~aux + aux_bytes)
+  stack := stack_top
+  def Num = 0; def Sort = 1; def Depth = 2; def Frame = 3
+  def has_stack{} = stack < stack_top
+  def merge_p{} = {
+    logical_merge{xp, stack->Num, stack->Sort, np, sp}
+    stack += Frame
+  }
+
+  xp := x
+  np := n; sp := new_run{x, np}
+
+  xi := x + np; end := x + n
+  while (xi < end) {
+    # New run: now only used to determine if previous should be merged
+    # Next round when it's previous it may be merged
+    nn := end - xi; sn := new_run{xi, nn}
+    target_depth := merge_depth{xi - x, np, nn}
+    xi += nn
+
+    # Merge previous run with the ones that want to be deeper than it
+    while (has_stack{} and stack->Depth >= target_depth) merge_p{}
+
+    # Push to stack; shift new to prev
+    stack -= Frame
+    stack <-{Num} np; stack <-{Sort} sp; stack <-{Depth} target_depth
+    xp += np
+    np = nn; sp = sn
+  }
+  while (has_stack{}) merge_p{}
+  sort_run{x, np, sp}
+}

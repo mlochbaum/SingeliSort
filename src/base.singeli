@@ -37,6 +37,8 @@ def __sub{a, b:u1} = __sub{a, addtype{a}^~b}
 
 def clone{old} = { new:=old }
 
+def leading_zeros{x:u64} = u8 <~ emit{i32, '__builtin_clzll', x}
+
 def expect{e}{X} = emit{type{X}, '__builtin_expect', X,e}
 def RARE   = expect{0}
 def LIKELY = expect{1}
