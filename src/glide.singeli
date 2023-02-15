@@ -1,3 +1,21 @@
+# TODO use branchless merges
+def merge_2{x, l, r, aux} = branch_merge{x, clone{l}, l+r, aux}
+def quad_merge{x, a, b, c, d, aux} = {
+  def h = a+b
+  merge_2{x    , a, b, aux}
+  merge_2{x + h, c, d, aux}
+  merge_2{x    , h, c+d, aux}
+}
+def triple_merge{x, l, m, r, aux} = {
+  if (l < r) {
+    merge_2{x, l  , m, aux}
+    merge_2{x, l+m, r, aux}
+  } else {
+    merge_2{x+l, m, r, aux}
+    merge_2{x, l, r+m, aux}
+  }
+}
+
 # Return a generator that gets depth
 def powersort_init{ns} = {
   n := u64^~ns
@@ -12,7 +30,9 @@ glide_sort{U, T, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
 
   def MIN_RUN = 64
   def base_sort{x, n} = sort(x, n, aux, *u8~~stack - *u8~~aux)
-  def merge_2{x, l, r} = branch_merge{x, clone{l}, l+r, *T~~aux}
+  def merge_2{x, l, r}       = branch_merge{x, l, l+r, *T~~aux}
+  def merge_3{x, l, m, r}    = triple_merge{x, l, m, r, *T~~aux}
+  def merge_4{x, a, b, c, d} =   quad_merge{x, a, b, c, d, *T~~aux}
 
   # A logical run consists of a length (e.g. nl) and sortedness (sl)
   # The starting position is maintained separately
@@ -70,9 +90,14 @@ glide_sort{U, T, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
         if (sr == 0) { base_sort{xr, nr}; sr = SORTED; s_min = sl }
         if (sl == 0) { base_sort{xp, nl}; sl = SORTED; s_min = sr }
       }
-      # Temp: straightforward merge
-      merge_2{xp, nl, nr}
-      sr = SORTED
+      if (s_min == SORTED) { # Both sorted, now split-sorted
+        sr = nl
+      } else {
+        if      (sr == SORTED) merge_3{xp, sl, nl-sl, nr}
+        else if (sl == SORTED) merge_3{xp, nl,        sr, nr-sr}
+        else                   merge_4{xp, sl, nl-sl, sr, nr-sr}
+        sr = SORTED
+      }
     }
     nr += nl
   }
@@ -85,7 +110,7 @@ glide_sort{U, T, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
   def Num = 0; def Sort = 1; def Depth = 2; def Frame = 3
   def has_stack{} = stack < stack_top
   def merge_p{} = {
-    logical_merge{xp, stack->Num, stack->Sort, np, sp}
+    logical_merge{xp, clone{stack->Num}, clone{stack->Sort}, np, sp}
     stack += Frame
   }
 
