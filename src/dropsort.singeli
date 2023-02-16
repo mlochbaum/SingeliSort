@@ -108,21 +108,25 @@ def drape_sort{sort}{x:pT, n:U, aux:pT} = {
   j := keep + 1  # Number of kept values
   # Values past j are no longer needed, so use them as aux space
   sort{aux,       lows,    x+j}
-  sort{aux+highs, n-highs, x+j} # TODO unstable: reverse sort
+  reverse{aux+highs, n-highs}  # For stability
+  sort{aux+highs, n-highs, x+j}
 
-  # Merge highs back in
-  h := n; while (h > highs) {
-    --h; d := aux->h
-    v:=undefined{T}; jn:=undefined{U}
-    while (d < (v = x->(jn=j-1))) { --i; x <-{i} v; j=jn }
-    --i; x <-{i} d
+  def merge_back{old_end, new_end, first_drop, last_drop, cmp} = {
+    j := old_end; i := new_end
+    # Guarding index j below takes time, so stop before it's needed
+    stop := first_drop
+    while (stop<last_drop and cmp{aux->stop, x->0}) ++stop
+    # Main loop
+    di := last_drop; while (di > stop) {
+      --di; d := aux->di
+      v:=undefined{T}; jn:=undefined{U}
+      while (cmp{d, (v = x->(jn=j-1))}) { --i; x <-{i} v; j=jn }
+      --i; x <-{i} d
+    }
+    # Values before stop need to go at the beginning
+    set{x, aux+first_drop, stop-first_drop}
   }
-  while (j > 0) { --j; --i; x <-{i} x->j }
 
-  # And lows
-  @for (d in aux over lows) {
-    v:=undefined{T}
-    while (d > (v = x->i)) { x <-{j} v; ++j; ++i }
-    x <-{j} d; ++j
-  }
+  merge_back{j, n-lows, highs, n, <=}
+  merge_back{n-lows, n, U~~0, lows, <}
 }

@@ -48,18 +48,15 @@ glide_sort{U, T, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
     s:U = 0
     def done = makelabel{}
     if (r >= MIN_RUN) {
-      reverse := x->0 > x->1 # Run is descending
-      l:U = 2                # Run length
+      desc := x->0 > x->1  # Run is descending
+      l:U = 2              # Run length
       def follow_run{cmp} = {
         while (l < r and cmp{x->(l-1), x->l}) ++l
       }
-      if (not reverse) follow_run{<=}; else follow_run{>}
+      if (not desc) follow_run{<=}; else follow_run{>}
 
       if (l >= MIN_RUN) {
-        if (reverse) {
-          xr := x + l-1
-          @for (i to l/2) x+i <-> xr-i
-        }
+        if (desc) reverse{x, l}
         r = l; s = SORTED
         goto{done}
       }

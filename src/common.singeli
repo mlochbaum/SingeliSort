@@ -7,6 +7,11 @@ def map{op, a, b:T, n & tptr{T}} = @for (a, b over n) op{a,b}
 # memset/memcpy
 def set = bind{map, {a,b} => {a=b}}
 
+def reverse{x:T, n & tptr{T}} = {
+  xr := x + n-1
+  @for (i to n/2) x+i <-> xr-i
+}
+
 def filter_neq{dst, src, len, v} = {
   d:=dst; l:=len
   s1:=src-1; while (s1->l == v) --l
