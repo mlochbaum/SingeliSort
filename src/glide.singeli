@@ -45,9 +45,8 @@ def powersort_init{ns} = {
   }
 }
 
-glide_sort{U, T, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
+glide_sort{U, T, min_run, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
 
-  def MIN_RUN = 64
   def base_sort{x, n} = sort(x, n, aux, *u8~~stack - *u8~~aux)
   def merge_2{x, l, r}       =  basic_merge{x, l, r, *T~~aux}
   def merge_3{x, l, m, r}    = triple_merge{U, T}(x, l, m, r, *T~~aux)
@@ -66,7 +65,7 @@ glide_sort{U, T, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
   def new_run{x, r:U} = {
     s:U = 0
     def done = makelabel{}
-    if (r >= MIN_RUN) {
+    if (r >= min_run) {
       desc := x->0 > x->1  # Run is descending
       l:U = 2              # Run length
       def follow_run{cmp} = {
@@ -74,12 +73,12 @@ glide_sort{U, T, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
       }
       if (not desc) follow_run{<=}; else follow_run{>}
 
-      if (l >= MIN_RUN) {
+      if (l >= min_run) {
         if (desc) reverse{x, l}
         r = l; s = SORTED
         goto{done}
       }
-      r = MIN_RUN
+      r = min_run
     }
     if (eager) {
       piposort{T}(x, r, *T~~aux)
