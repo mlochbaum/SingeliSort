@@ -6,15 +6,21 @@ Compile with:
 
     $ singeli src/sort.singeli -o sort.c && gcc -O3 bench.c
 
-Singeli sort will hybridize the following algorithms. Most have been implemented with performance matching the C versions, but there's more work in tying them together.
+There's also a pre-compiled copy of sort.c in `compiled/sort.c`. It may not be kept up to date.
+
+Singeli sort currently hybridizes the following algorithms; all are used for `glide32` and other functions use subsets. The overall structure is that the glidesort layer may call quicksort, which calls the different base cases in various situations.
 
 - Quicksort partitioning from [fluxsort](https://github.com/scandum/fluxsort) and [crumsort](https://github.com/scandum/crumsort)
-- Merging: [piposort](https://github.com/scandum/piposort) and parts of [quadsort](https://github.com/scandum/quadsort)
 - Outer merge layer: [glidesort](https://github.com/orlp/glidesort) (powersort rules made lazy to defer to quicksort when possible)
-- Small-array sorting: quadsort
+- Merging: [piposort](https://github.com/scandum/piposort)
+- Small-array sorting: [quadsort](https://github.com/scandum/quadsort)
 - Radix sort: mostly like [ska_sort_copy](https://github.com/skarupke/ska_sort)
 - Counting sort: see [section](https://github.com/mlochbaum/rhsort#counting-sort) in rhsort
 - [Robin Hood](https://github.com/mlochbaum/rhsort) sort
+
+Methods implemented but not yet used:
+
+- Small-array sorting networks as in [ipn_unstable](https://github.com/Voultapher/sort-research-rs/blob/main/src/unstable/rust_ipn.rs)
 - [Drop-Merge sort](https://github.com/emilk/drop-merge-sort)
 
 Other methods to consider later:

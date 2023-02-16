@@ -9,6 +9,7 @@ include './radix'
 include './rh'
 include './small'
 include './quicksort'
+include './glide'
 
 # For 1-byte inputs, counting sort is usually best
 sort8{U,T}(x:*T, n:U, aux:*void) : void = {
@@ -49,6 +50,12 @@ grade8_16{U,T,I}(x:*T, g:*I, n:U, aux:*void) : void = {
 'grade8_64'  = grade8_16{usize, i8 , u64}
 'grade16_64' = grade8_16{usize, i16, u64}
 
-'rhsort' = rh_sort{usize, i32, merge_chk, merge_from{merge_chk}, findrange}
+'rhsort32' = rh_sort{usize, i32, merge_chk, merge_from{merge_chk}, findrange}
 
-'flux32' = flux_sort{usize, i32}
+def flux32 = flux_sort{usize, i32}
+'flux32' = flux32
+'glide32' = glide_sort{usize, i32, 128, 0, flux32}
+
+def flux_f64 = flux_sort{usize, f64}
+'flux_f64' = flux_f64
+'glide_f64' = glide_sort{usize, f64, 128, 0, flux_f64}
