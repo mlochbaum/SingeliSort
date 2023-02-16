@@ -1,18 +1,37 @@
-# TODO use branchless merges
-def merge_2{x, l, r, aux} = branch_merge{x, clone{l}, l+r, aux}
-def quad_merge{x, a, b, c, d, aux} = {
-  def h = a+b
-  merge_2{x    , a, b, aux}
-  merge_2{x + h, c, d, aux}
-  merge_2{x    , h, c+d, aux}
+# Merging methods
+# Merging 4 segments at a time is most efficient, but 3 is used for
+# unbalanced natural runs, and 2 at the end
+# Should probably implement versions where the left or right half is
+# already in place, to avoid the set{} calls below
+def merge_into{dst:pT, src:pT, left:U, n:U} = {
+  parity_merge{eltype{pT}, 1}(dst, src, left, n)
 }
-def triple_merge{x, l, m, r, aux} = {
+# Merge of 2, the lazy way
+def basic_merge{x, l, r, aux} = {
+  n := l + r
+  set{aux, x, n}
+  merge_into{x, aux, l, n}
+}
+# Merge of 4
+def quad_merge{x:pT, a, b, c, d, aux:pT} = {
+  l := a + b
+  r := c + d
+  merge_into{aux,   x,   a, l}    # Left half
+  merge_into{aux+l, x+l, c, r}    # Right half
+  merge_into{x,     aux, l, l+r}  # Combine
+}
+# Merge of 3, as a function since it's used twice
+triple_merge{U, T}(x:*T, l:U, m:U, r:U, aux:*T) : void = {
   if (l < r) {
-    merge_2{x, l  , m, aux}
-    merge_2{x, l+m, r, aux}
+    h := l + m
+    merge_into{aux, x, l, h}      # Left
+    set{aux+h, x+h, r}            # Right
+    merge_into{x, aux, h, h+r}    # Combine
   } else {
-    merge_2{x+l, m, r, aux}
-    merge_2{x, l, r+m, aux}
+    h := m + r
+    set{aux, x, l}                # Left
+    merge_into{aux+l, x+l, m, h}  # Right
+    merge_into{x, aux, l, l+h}    # Combine
   }
 }
 
@@ -30,8 +49,8 @@ glide_sort{U, T, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
 
   def MIN_RUN = 64
   def base_sort{x, n} = sort(x, n, aux, *u8~~stack - *u8~~aux)
-  def merge_2{x, l, r}       = branch_merge{x, l, l+r, *T~~aux}
-  def merge_3{x, l, m, r}    = triple_merge{x, l, m, r, *T~~aux}
+  def merge_2{x, l, r}       =  basic_merge{x, l, r, *T~~aux}
+  def merge_3{x, l, m, r}    = triple_merge{U, T}(x, l, m, r, *T~~aux)
   def merge_4{x, a, b, c, d} =   quad_merge{x, a, b, c, d, *T~~aux}
 
   # A logical run consists of a length (e.g. nl) and sortedness (sl)

@@ -57,7 +57,7 @@ parity_merge{T, handle_odd}(dst:*T, src:*T, half:usize, n:usize) : void = {
     else        { dst<-r; ++rpos }
     ++dpos
   }
-  @for (half-1) {
+  @for (n/2 - 1) {
     parity_pos{lpos, rpos, dpos}
     parity_neg{lneg, rneg, dneg}
   }
