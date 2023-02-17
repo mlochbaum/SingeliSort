@@ -138,32 +138,65 @@ flux_loop{U, T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:usize, min:T, rh_state:u8
   }
 }
 
-flux_sort{U, T}(x:*T, n:U, aux:*void, aux_bytes:usize) : void = {
+flux_sort_with_run{U, T}(x:*T, n:U, aux:*void, aux_bytes:usize, desc:u1, l:U) : void = {
   if (n <= 192) {
     piposort{T}(x, n, *T~~aux)
     return{}
   }
 
   # Find the minimum value and index of last maximum
-  def block = 1024
-  min := x->0; max := min
-  i:U = 0; imax:=i
+  def block = 128
+  runs:U = l/block  # Number of block-length runs found
+  i := l
+  imax:U = l; if (desc) imax = 1  # One past index of maximum
+  min := x->(l-imax); max := x->(imax-1)
   do {
     i0 := i
     i += block; if (i > n) i = n
     blm := x->i0
-    @for (x over j from i0 to i) {
-      if (x < min) min=x
-      if (x > blm) blm=x
+    cmp:primtype{'u',width{T}} = 0
+    @for (v in x over j from i0 to i) {
+      cmp += v >= x->(j-1)
+      if (v < min) min=v
+      if (v > blm) blm=v
     }
+    runs += ((i-i0)-U^~cmp == block) | (cmp == block)
     if (blm >= max) { max=blm; imax=i; } # Save block index; refine later
   } while (i < n)
 
-  if (min == max) return{}
+  # Pass l=1 to indicate glide_sort shouldn't be used again
+  if (l > 1 and runs > n / (block*4)) {
+    def flux{...args} = flux_sort_with_run{U, T}(...args, 0, 1)
+    glide_sort{U, T, 64, 0, flux}(x, n, aux, aux_bytes)
+    return{}
+  }
+
   do { --imax } while (x->imax < max)
   x <-{imax} x->(n-1)  # (unstable)
   x <-{n-1} max
 
   # Now sort
   flux_loop{U,T}(x, x, *T~~aux, n-1, aux_bytes, min, 0)
+}
+
+flux_sort{U, T}(x:*T, n:U, aux:*void, aux_bytes:usize) : void = {
+  # Fast path
+  if (n < 4) {
+    sort_lt4{x, x, n}
+    return{}
+  }
+
+  # Follow first run
+  desc := x->0 > x->1  # Run is descending
+  l:U = 2              # Run length
+  def follow_run{cmp} = {
+    while (l < n and cmp{x->(l-1), x->l}) ++l
+  }
+  if (not desc) follow_run{<=}; else follow_run{>}
+
+  if (l == n) {
+    if (desc) reverse{x, l}
+    return{}
+  }
+  flux_sort_with_run{U, T}(x, n, aux, aux_bytes, desc, l)
 }

@@ -30,10 +30,10 @@ static U monoclock(void) {
 
 #include "sort.c"
 
-static void sort32(T *x, U n) {
+static void sort32_alloc(T *x, U n) {
   U a = (n + 4*(n<1<<16 ? n : 1<<16))*sizeof(T);
   T *aux = malloc(a);
-  glide32(x, n, aux, a);
+  sort32(x, n, aux, a);
   free(aux);
 }
 
@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
 #endif
     // Test
 #ifndef NOTEST
-    memcpy(sort, data, s); MODIFY(sort); sort32(sort, n);
+    memcpy(sort, data, s); MODIFY(sort); sort32_alloc(sort, n);
     memcpy(chk , data, s); MODIFY(chk ); qsort(chk, n, sizeof(T), cmpi);
     for (U i=0; i<n; i++) if (sort[i]!=chk[i]) {
       printf("Fails at [%ld]: %d but should be %d! ", i, sort[i], chk[i]);
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
     for (U r=0; r<iter; r++) {
       memcpy(sort, data+off+r, s); MODIFY(sort);
       U t = monoclock();
-      sort32(sort, n);
+      sort32_alloc(sort, n);
       t = monoclock()-t;
       sum += t;
       if (r==0||t<best) best=t;

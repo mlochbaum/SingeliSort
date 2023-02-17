@@ -47,7 +47,7 @@ def powersort_init{ns} = {
 
 glide_sort{U, T, min_run, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
 
-  def base_sort{x, n} = sort(x, n, aux, *u8~~stack - *u8~~aux)
+  def base_sort{x, n} = sort{x, n, aux, *u8~~stack - *u8~~aux}
   def merge_2{x, l, r}       =  basic_merge{x, l, r, *T~~aux}
   def merge_3{x, l, m, r}    = triple_merge{U, T}(x, l, m, r, *T~~aux)
   def merge_4{x, a, b, c, d} =   quad_merge{x, a, b, c, d, *T~~aux}

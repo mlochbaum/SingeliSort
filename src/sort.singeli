@@ -52,10 +52,5 @@ grade8_16{U,T,I}(x:*T, g:*I, n:U, aux:*void) : void = {
 
 'rhsort32' = rh_sort{usize, i32, merge_chk, merge_from{merge_chk}, findrange}
 
-def flux32 = flux_sort{usize, i32}
-'flux32' = flux32
-'glide32' = glide_sort{usize, i32, 128, 0, flux32}
-
-def flux_f64 = flux_sort{usize, f64}
-'flux_f64' = flux_f64
-'glide_f64' = glide_sort{usize, f64, 128, 0, flux_f64}
+'sort32' = flux_sort{usize, i32}
+'sort_f64' = flux_sort{usize, f64}
