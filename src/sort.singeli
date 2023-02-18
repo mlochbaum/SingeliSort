@@ -50,7 +50,7 @@ grade8_16{U,T,I}(x:*T, g:*I, n:U, aux:*void) : void = {
 'grade8_64'  = grade8_16{usize, i8 , u64}
 'grade16_64' = grade8_16{usize, i16, u64}
 
-'rhsort32' = rh_sort{usize, i32, merge_chk, merge_from{merge_chk}, findrange}
+'rhsort32' = rh_sort{usize, i32, findrange}
 
 'sort32' = flux_sort{usize, i32}
 'sort_f64' = flux_sort{usize, f64}

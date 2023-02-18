@@ -130,7 +130,7 @@ flux_loop{U, T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:usize, min:T, rh_state:u8
     def fn{gen} = bind{call, gen{U,T}}
     piv := get_pivot{src, n, getaux, fn{flux_sort}, proc_pivots, rh_state}
     if (isint{T} and rh_state == RH_APPROVED) {
-      try_rh{src, dst, n, aux, aux_bytes, min, dst->n, merge_chk, merge_from{merge_chk}}
+      try_rh{src, dst, n, aux, aux_bytes, min, dst->n}
     }
 
     # Then finish sorting; loop around for tail call

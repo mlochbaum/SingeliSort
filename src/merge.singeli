@@ -1,21 +1,5 @@
 # Merge sorting
 
-# Merge arrays of length l and n-l starting at a, using buffer aux.
-# Branchy and slow
-def branch_merge{a:pT, l:U, n:U, aux:pT} = {
-  set{aux, a, l}
-  ai:U=0; bi:U=l; i:U=0
-  while (i < bi) {
-    def pick{arr,ind} = { a <-{i} arr->ind; ++ind }
-    if (bi >= n or aux->ai <= a->bi) {
-      pick{aux,ai}
-    } else {
-      pick{a  ,bi}
-    }
-    ++i
-  }
-}
-
 # Parity merge: branchless
 # Main data movement
 def parity_pos{left, right, dst} = {
@@ -65,30 +49,28 @@ parity_merge{T, handle_odd}(dst:*T, src:*T, half:usize, n:usize) : void = {
   dneg <- sel{ >, *lneg, *rneg}
 }
 
-# Check for easy cases when the merge can be avoided
-# If the buffer helping at all, most merges go through these
-def merge_chk{a:pT, l:U, n:U, aux:pT} = {
-  if (a->(l-1) <= a->l) {
-    0
-  } else if (a->(n-1) < a->0 and l+l==n) {
-    b := a+l
-    map{<->, a, b, l}
-  } else {
-    branch_merge{a,l,n,aux}
-  }
+# Merge arrays of length l and n-l starting at a, using buffer aux
+# Can be done without moving both sides, but this way's easy
+def merge_pair{x:pT, left:U, n:U, aux:pT} = {
+  set{aux, x, n}
+  parity_merge{eltype{pT}, 1}(x, aux, left, n)
 }
 
 # Merge array x of size n, if units of length block are pre-sorted
-def merge_from{merge}{x:pT, n:U, aux:pT, block} = {
+def merge_from{x:pT, n:U, aux:pT, block} = {
+  def T = eltype{pT}
+  src:=x; dst:=aux
   w:U = block; while (w < n) {
     ww:=2*w
     i:U=0; while (i < n-w) {
       l := n-i; if (l>ww) l=ww
-      merge{x+i, w, l, aux}
+      parity_merge{T, 1}(dst+i, src+i, w, l)
       i += ww
     }
     w = ww
+    src <-> dst
   }
+  if (dst != x) set{x, dst, n}
 }
 
 # A simple bottom-down and not-very-adaptive merge sort using
