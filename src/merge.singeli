@@ -2,31 +2,29 @@
 
 # Parity merge: branchless
 # Main data movement
-def parity_pos{left, right, dst} = {
-  l := left->0; r := right->0
+def parity_pos{left, right, dst, i} = {
+  l := left->0; r := right->i
   c := l <= r
-  if (c) r=l; dst <- r
-  right -= c; ++right
-  left  += c
-  ++dst
-}
-def parity_neg{left, right, dst} = {
-  l := left->0; r := right->0
-  c := l <= r
-  if (c) l=r; dst <- l
+  if (c) r=l; dst <-{i} r
   right -= c
-  left  += c; --left
-  --dst
+  left  += c
+}
+def parity_neg{left, right, dst, i} = {
+  l := left->(-i); r := right->0
+  c := l <= r
+  if (c) l=r; dst <-{-i} l
+  right -= c
+  left  += c
 }
 
 # Merge halves of length-n array with constant n (4 and 8 used)
 def parity_merge_const{n, dst, src} = {
   def h = n / 2
   left := clone{src}; right := src + h; dstc := clone{dst}
-  @for_const (h) parity_pos{left, right, dstc}
+  @for_const (i to h) parity_pos{left, right, dstc, i}
 
   left = src + (h-1); right = src + (n-1); dstc = dst + (n-1)
-  @for_const (h) parity_neg{left, right, dstc}
+  @for_const (i to h) parity_neg{left, right, dstc, i}
 }
 
 # Merge halves of array
@@ -35,14 +33,12 @@ parity_merge{T, handle_odd}(dst:*T, src:*T, half:usize, n:usize) : void = {
   lneg := src + half - 1; rneg := src + n - 1; dneg := dst + n - 1
 
   if (handle_odd and n%2) {
-    l := lpos->0; r := rpos->0
-    if (l <= r) { dst<-l; ++lpos }
-    else        { dst<-r; ++rpos }
-    ++dpos
+    parity_pos{lpos, rpos, dpos, 0}
+    ++rpos; ++dpos
   }
-  @for_unroll{2} (n/2) {
-    parity_pos{lpos, rpos, dpos}
-    parity_neg{lneg, rneg, dneg}
+  @for_unroll{2} (i to n/2) {
+    parity_pos{lpos, rpos, dpos, i}
+    parity_neg{lneg, rneg, dneg, i}
   }
 }
 
