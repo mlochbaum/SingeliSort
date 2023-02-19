@@ -103,3 +103,19 @@ piposort{T}(x:*T, n:usize, aux:*T) : void = {
   merge(aux + h1, x + h1, q3, h2)
   merge(x       , aux   , h1, n)
 }
+
+# Requires dst != aux; src may be dst or aux
+half_piposort{T}(dst:*T, src:*T, n:usize, aux:*T) : void = {
+  if (n < 32) {
+    sort_lt32{dst, src, n}
+    return{}
+  }
+
+  h1 := n / 2; h2 := n - h1
+
+  def recur = half_piposort{T}
+  recur(aux,      src,      h1, dst)
+  recur(aux + h1, src + h1, h2, dst + h1)
+
+  parity_merge{T, 1}(dst, aux, h1, n)
+}

@@ -5,8 +5,8 @@ include './arith'  # Logs and square roots
 
 def base_cases{src:*T, dst:*T, aux:*T, n:U, aux_bytes:usize, min:T} = {
   # Short array
-  if (n < 32) {
-    sort_lt32{dst, src, n}
+  if (n < 192) {
+    half_piposort{T}(dst, src, n, aux)
     return{}
   }
 
@@ -37,9 +37,7 @@ def get_pivot{array:pT, n:U, getaux, sort, proc_pivots, rh_state} = {
   sl0:U = 8
   # Output array and index
   arr:=array; ind:U = 0
-  if (n <= 192) {
-    ind = locate_3_median{array, n}
-  } else if (rh_state!=RH_UNTRIED and n <= 1024) {
+  if (rh_state!=RH_UNTRIED and n <= 1024) {
     ind = locate_3of3_pseudomedian{array, n}
   } else if (rh_state!=RH_UNTRIED and n <= 1 << (sl0 = 14)) {
     ind = locate_5of3_pseudomedian{array, n}
@@ -99,14 +97,13 @@ def flux_recur{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:us
   # Sort the right-hand side, moving it from rsrc to dst
   rdst := dst + m
   if (r > most) { # Unbalanced
-    set{rdst, rsrc, r}
-    piposort{T}(rdst, r, rsrc)
+    half_piposort{T}(rdst, rsrc, r, aux)
   } else {
     recur{rsrc, rdst, aux, r, aux_bytes, piv, rh_state}
   }
 
   if (l > most) { # Unbalanced
-    piposort{T}(dst, l, aux)
+    half_piposort{T}(dst, dst, l, aux)
     return{}
   }
 
