@@ -28,7 +28,7 @@ def parity_merge_const{n, dst, src} = {
 }
 
 # Merge halves of array
-parity_merge{T, handle_odd}(dst:*T, src:*T, half:usize, n:usize) : void = {
+parity_merge{T, handle_odd}(dst:*T, src:*T, half:U, n:U) : void = {
   lpos := src           ; rpos := src + half ; dpos := dst
   lneg := src + half - 1; rneg := src + n - 1; dneg := dst + n - 1
 
@@ -68,7 +68,7 @@ def merge_from{x:pT, n:U, aux:pT, block} = {
 
 # A simple bottom-down and not-very-adaptive merge sort using
 # branchless merges in sets of 4
-piposort{T}(x:*T, n:usize, aux:*T) : void = {
+piposort{T}(x:*T, n:U, aux:*T) : void = {
   if (n < 32) {
     sort_lt32{x, n}
     return{}
@@ -105,7 +105,7 @@ piposort{T}(x:*T, n:usize, aux:*T) : void = {
 }
 
 # Requires dst != aux; src may be dst or aux
-half_piposort{T}(dst:*T, src:*T, n:usize, aux:*T) : void = {
+half_piposort{T}(dst:*T, src:*T, n:U, aux:*T) : void = {
   if (n < 32) {
     sort_lt32{dst, src, n}
     return{}

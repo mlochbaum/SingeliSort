@@ -26,6 +26,7 @@ def __pnt{t & ktup{t}} = __pnt{single{t}}
 def ptr_gt{a,b} = load{a,0} > load{b,0}
 
 def usize = primtype{'u',width{*void}}
+def U = usize
 def bytes{t & ktyp{t}} = width{t} / 8
 
 # Change to unsigned: here we always subtract smaller from greater

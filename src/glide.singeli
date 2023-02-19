@@ -15,7 +15,7 @@ def quad_merge{x:pT, a, b, c, d, aux:pT} = {
   merge_into{x,     aux, l, l+r}  # Combine
 }
 # Merge of 3, as a function since it's used twice
-triple_merge{U, T}(x:*T, l:U, m:U, r:U, aux:*T) : void = {
+triple_merge{T}(x:*T, l:U, m:U, r:U, aux:*T) : void = {
   if (l < r) {
     h := l + m
     merge_into{aux, x, l, h}      # Left
@@ -39,11 +39,11 @@ def powersort_init{ns} = {
   }
 }
 
-glide_sort{U, T, min_run, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
+glide_sort{T, min_run, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
 
   def base_sort{x, n} = sort{x, n, aux, *u8~~stack - *u8~~aux}
   def merge_2{x, l, r}       = merge_pair{x, l, l+r, *T~~aux}
-  def merge_3{x, l, m, r}    = triple_merge{U, T}(x, l, m, r, *T~~aux)
+  def merge_3{x, l, m, r}    = triple_merge{T}(x, l, m, r, *T~~aux)
   def merge_4{x, a, b, c, d} = quad_merge{x, a, b, c, d, *T~~aux}
 
   # A logical run consists of a length (e.g. nl) and sortedness (sl)
