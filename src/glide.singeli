@@ -4,7 +4,7 @@
 # Should probably implement versions where the left or right half is
 # already in place, to avoid the set{} calls below
 def merge_into{dst:pT, src:pT, left:U, n:U} = {
-  parity_merge{eltype{pT}, 1}(dst, src, left, n)
+  parity_merge_any{eltype{pT}}(dst, src, left, n)
 }
 # Merge of 4
 def quad_merge{x:pT, a, b, c, d, aux:pT} = {
