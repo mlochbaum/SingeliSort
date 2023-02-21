@@ -143,7 +143,7 @@ rh_sort{T, range}(x:*T, n:U, aux:*T) : void = {
   }
 }
 
-def try_rh{src:pT, dst:pT, n:U, aux:pT, aux_bytes:U, minv, maxv} = {
+def try_rh{dst:pT, src:pT, n:U, aux:pT, aux_bytes:U, minv, maxv} = {
   na := aux_bytes / bytes{eltype{pT}}
   def exit = makelabel{}
   def req{cond} = { if (not cond) goto{exit} }

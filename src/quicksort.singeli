@@ -3,7 +3,7 @@ include './median'
 include './xorshift'
 include './arith'  # Logs and square roots
 
-def base_cases{src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T} = {
+def base_cases{dst:*T, src:*T, aux:*T, n:U, aux_bytes:U, min:T} = {
   # Short array
   if (n < 192) {
     half_piposort{T}(dst, src, n, aux)
@@ -22,7 +22,7 @@ def base_cases{src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T} = {
       return{}
     }
     if (width{T} == 32 and n <= (1<<16) and range < (1<<16)) {
-      radpack32(*u32~~src, *u32~~dst, u32<~n, *void~~aux, u32~~min)
+      radpack32(*u32~~dst, *u32~~src, u32<~n, *void~~aux, u32~~min)
       return{}
     }
   }
@@ -114,7 +114,7 @@ def flux_recur{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:U,
 
 flux_loop{T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8) : void = {
   while (u1~~1) {
-    base_cases{src, dst, aux, n, aux_bytes, min}
+    base_cases{dst, src, aux, n, aux_bytes, min}
 
     # Find pivot and check for RH sorting
     def getaux{} = { a:=aux; if (a==src) a=dst; a }
@@ -127,7 +127,7 @@ flux_loop{T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8) : voi
     def fn{gen} = bind{call, gen{T}}
     piv := get_pivot{src, n, getaux, fn{flux_sort}, proc_pivots, rh_state}
     if (isint{T} and rh_state == RH_APPROVED) {
-      try_rh{src, dst, n, aux, aux_bytes, min, dst->n}
+      try_rh{dst, src, n, aux, aux_bytes, min, dst->n}
     }
 
     # Then finish sorting; loop around for tail call
