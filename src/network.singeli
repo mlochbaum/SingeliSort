@@ -12,15 +12,15 @@
 # destination differ, move from src to dst in that layer (i_move below)
 
 # Branchlessly order values at i and j while moving from src to dst
-local def order{dst, src, i, j} = {
+local def order{dn}{dst, src, i, j} = {
   a := src->i; b := src->j
-  x := (a^b) & - type{a}^~(a>b)
+  x := (a^b) & - type{a}^~(a >{dn} b)
   dst <-{i} x^a
   dst <-{j} x^b
 }
 # Perform all swaps
-local def network_sort{i_move, i_inplace}{dst, src} = {
-  def run{s, i} = each{bind{order, dst, s}, ...flip{i}}
+local def network_sort{i_move, i_inplace}{dn, dst, src} = {
+  def run{s, i} = each{bind{order{dn}, dst, s}, ...flip{i}}
   run{src, i_move}    # First round, move src to dst while swapping
   run{dst, i_inplace} # Now just swap
 }

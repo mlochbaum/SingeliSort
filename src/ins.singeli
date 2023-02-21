@@ -1,34 +1,34 @@
 # Guarded or unguarded insertion sort of len values at x
 # Unguarded requires x->(-1) to precede all of these values
-def insertion_sort{x:pT, len:U, guard} = {
+def insertion_sort{dn, x:pT, len:U, guard} = {
   # First value's already in place; insert the others
   @for (xi in x over i from 1 to len) {
     # j moves backward along the array until finding the right spot
     j := i; jn := i
     xj := xi
-    while ((not guard or 0<j) and xi < (xj=x->(jn=j-1))) {
+    while ((not guard or 0<j) and xi <{dn} (xj=x->(jn=j-1))) {
       x <-{j} xj; j=jn  # Move previous value forward
     }
     x <-{j} xi
   }
 }
 # Default to guarded
-def insertion_sort{x:pT, len:U} = insertion_sort{x, len, 1}
+def insertion_sort{dn, x:pT, len:U} = insertion_sort{dn, x, len, 1}
 
 # Sort an array where indices less than start are already sorted
-def insertion_finish{dst, src, start, n} = {
+def insertion_finish{dn, dst, src, start, n} = {
   @for (i from start to n) {
     end := dst + i
     def xi = src*?i
     prev := end - 1
-    if (*?prev > xi) {
+    if (*?prev >{dn} xi) {
       def xi = get{xi}
-      if (*?dst > xi) {
+      if (*?dst >{dn} xi) {
         top := i
         do { end <- prev->0; --end; --prev } while (--top)
         end <- xi
       } else {
-        do { end <- prev->0; --end; --prev } while (*?prev > xi)
+        do { end <- prev->0; --end; --prev } while (*?prev >{dn} xi)
         end <- xi
       }
     }

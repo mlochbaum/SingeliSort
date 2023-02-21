@@ -3,10 +3,10 @@ include './median'
 include './xorshift'
 include './arith'  # Logs and square roots
 
-def base_cases{dst:*T, src:*T, aux:*T, n:U, aux_bytes:U, min:T} = {
+def base_cases{dn, dst:*T, src:*T, aux:*T, n:U, aux_bytes:U, min:T} = {
   # Short array
   if (n < 192) {
-    half_piposort{T}(dst, src, n, aux)
+    half_piposort{dn, T}(dst, src, n, aux)
     return{}
   }
 
@@ -32,6 +32,7 @@ def base_cases{dst:*T, src:*T, aux:*T, n:U, aux_bytes:U, min:T} = {
 def RH_UNTRIED = 0
 def RH_APPROVED = 2
 
+# No direction: doesn't affect median; built into sort{} and proc_pivots{}
 def get_pivot{array:pT, n:U, getaux, sort, proc_pivots, rh_state} = {
   # log_2 of minimum size for sampling
   sl0:U = 8
@@ -67,17 +68,17 @@ def get_pivot{array:pT, n:U, getaux, sort, proc_pivots, rh_state} = {
 
 # Fluxsort recurrence: partition, handle right then left side
 # src may be equal to dst or aux
-def flux_recur{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8} = {
+def flux_recur{dn, recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8} = {
 
   # Partition: left side directly in dst with length l, includes pivots
   l:U = 0
   rsrc := aux
   if (LIKELY{n < 1<<14}) {
-    l = flux_partition{src, <=, piv, dst, aux, n}
+    l = flux_partition{src, <={dn}, piv, dst, aux, n}
   } else {
     # Previous partitions must have used fulcrum too, so we haven't yet
     # touched aux, and src==dst
-    l = fulcrum_partition{dst, <=, piv, aux, n}  # (unstable)
+    l = fulcrum_partition{dst, <={dn}, piv, aux, n}  # (unstable)
     rsrc = dst + l
   }
   r := n - l  # Values on the right
@@ -90,20 +91,20 @@ def flux_recur{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:U,
   if (l > most) {
     # Partition again with pivots on the right
     # This bounds performance by O(k*n) for only k unique values
-    l = flux_partition{dst, <, piv, dst, aux+r, m}
+    l = flux_partition{dst, <{dn}, piv, dst, aux+r, m}
     set{dst+l, aux+r, m-l} # Should probably write a reverse partition to avoid this
   }
 
   # Sort the right-hand side, moving it from rsrc to dst
   rdst := dst + m
   if (r > most) { # Unbalanced
-    half_piposort{T}(rdst, rsrc, r, aux)
+    half_piposort{dn, T}(rdst, rsrc, r, aux)
   } else {
     recur{rsrc, rdst, aux, r, aux_bytes, piv, rh_state}
   }
 
   if (l > most) { # Unbalanced
-    half_piposort{T}(dst, dst, l, aux)
+    half_piposort{dn, T}(dst, dst, l, aux)
     return{}
   }
 
@@ -112,9 +113,9 @@ def flux_recur{recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:U,
   n = l
 }
 
-flux_loop{T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8) : void = {
+flux_loop{dn, T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8) : void = {
   while (u1~~1) {
-    base_cases{dst, src, aux, n, aux_bytes, min}
+    base_cases{dn, dst, src, aux, n, aux_bytes, min}
 
     # Find pivot and check for RH sorting
     def getaux{} = { a:=aux; if (a==src) a=dst; a }
@@ -124,20 +125,20 @@ flux_loop{T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8) : voi
         rh_state = 1 + u8^~checkdist{pivots, num, min, n, dist{U, min, dst->n}}
       }
     }
-    def fn{gen} = bind{call, gen{T}}
+    def fn{gen} = bind{call, gen{dn, T}}
     piv := get_pivot{src, n, getaux, fn{flux_sort}, proc_pivots, rh_state}
     if (isint{T} and rh_state == RH_APPROVED) {
-      try_rh{dst, src, n, aux, aux_bytes, min, dst->n}
+      try_rh{dn, dst, src, n, aux, aux_bytes, min, dst->n}
     }
 
     # Then finish sorting; loop around for tail call
-    flux_recur{fn{flux_loop},1, piv, src,dst,aux,n,aux_bytes, min,rh_state}
+    flux_recur{dn, fn{flux_loop},1, piv, src,dst,aux,n,aux_bytes, min,rh_state}
   }
 }
 
-flux_sort_with_run{T}(x:*T, n:U, aux:*void, aux_bytes:U, desc:u1, l:U) : void = {
+flux_sort_with_run{dn, T}(x:*T, n:U, aux:*void, aux_bytes:U, desc:u1, l:U) : void = {
   if (n <= 192) {
-    piposort{T}(x, n, *T~~aux)
+    piposort{dn, T}(x, n, *T~~aux)
     return{}
   }
 
@@ -153,47 +154,44 @@ flux_sort_with_run{T}(x:*T, n:U, aux:*void, aux_bytes:U, desc:u1, l:U) : void = 
     blm := x->i0
     cmp:primtype{'u',width{T}} = 0
     @for (v in x over j from i0 to i) {
-      cmp += v >= x->(j-1)
-      if (v < min) min=v
-      if (v > blm) blm=v
+      cmp += v >={dn} x->(j-1)
+      if (v <{dn} min) min=v
+      if (v >{dn} blm) blm=v
     }
     runs += ((i-i0)-U^~cmp == block) | (cmp == block)
-    if (blm >= max) { max=blm; imax=i; } # Save block index; refine later
+    if (blm >={dn} max) { max=blm; imax=i; } # Save block index; refine later
   } while (i < n)
 
   # Pass l=1 to indicate glide_sort shouldn't be used again
   if (l > 1 and runs > n / (block*4)) {
-    def flux{...args} = flux_sort_with_run{T}(...args, 0, 1)
-    glide_sort{T, 64, 0, flux}(x, n, aux, aux_bytes)
+    def flux{...args} = flux_sort_with_run{dn, T}(...args, 0, 1)
+    glide_sort{dn, T, 64, 0, flux}(x, n, aux, aux_bytes)
     return{}
   }
 
-  do { --imax } while (x->imax < max)
+  do { --imax } while (x->imax <{dn} max)
   x <-{imax} x->(n-1)  # (unstable)
   x <-{n-1} max
 
   # Now sort
-  flux_loop{T}(x, x, *T~~aux, n-1, aux_bytes, min, 0)
+  flux_loop{dn, T}(x, x, *T~~aux, n-1, aux_bytes, min, 0)
 }
 
-flux_sort{T}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
+flux_sort{dn, T}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
   # Fast path
   if (n < 4) {
-    sort_lt4{x, x, n}
+    sort_lt4{dn, x, x, n}
     return{}
   }
 
   # Follow first run
-  desc := x->0 > x->1  # Run is descending
-  l:U = 2              # Run length
-  def follow_run{cmp} = {
-    while (l < n and cmp{x->(l-1), x->l}) ++l
-  }
-  if (not desc) follow_run{<=}; else follow_run{>}
+  def desc_len = find_run{dn, x, n}
+  desc:u1 = tupsel{0,desc_len}  # Run is descending
+  l:U     = tupsel{1,desc_len}  # Run length
 
   if (l == n) {
     if (desc) reverse{x, l}
     return{}
   }
-  flux_sort_with_run{T}(x, n, aux, aux_bytes, desc, l)
+  flux_sort_with_run{dn, T}(x, n, aux, aux_bytes, desc, l)
 }

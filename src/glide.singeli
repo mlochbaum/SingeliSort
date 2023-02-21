@@ -3,29 +3,29 @@
 # unbalanced natural runs, and 2 at the end
 # Should probably implement versions where the left or right half is
 # already in place, to avoid the set{} calls below
-def merge_into{dst:pT, src:pT, left:U, n:U} = {
-  parity_merge_any{eltype{pT}}(dst, src, left, n)
+def merge_into{dn, dst:pT, src:pT, left:U, n:U} = {
+  parity_merge_any{dn, eltype{pT}}(dst, src, left, n)
 }
 # Merge of 4
-def quad_merge{x:pT, a, b, c, d, aux:pT} = {
+def quad_merge{dn, x:pT, a, b, c, d, aux:pT} = {
   l := a + b
   r := c + d
-  merge_into{aux,   x,   a, l}    # Left half
-  merge_into{aux+l, x+l, c, r}    # Right half
-  merge_into{x,     aux, l, l+r}  # Combine
+  merge_into{dn, aux,   x,   a, l}    # Left half
+  merge_into{dn, aux+l, x+l, c, r}    # Right half
+  merge_into{dn, x,     aux, l, l+r}  # Combine
 }
 # Merge of 3, as a function since it's used twice
-triple_merge{T}(x:*T, l:U, m:U, r:U, aux:*T) : void = {
+triple_merge{dn, T}(x:*T, l:U, m:U, r:U, aux:*T) : void = {
   if (l < r) {
     h := l + m
-    merge_into{aux, x, l, h}      # Left
-    set{aux+h, x+h, r}            # Right
-    merge_into{x, aux, h, h+r}    # Combine
+    merge_into{dn, aux, x, l, h}      # Left
+    set{aux+h, x+h, r}                # Right
+    merge_into{dn, x, aux, h, h+r}    # Combine
   } else {
     h := m + r
-    set{aux, x, l}                # Left
-    merge_into{aux+l, x+l, m, h}  # Right
-    merge_into{x, aux, l, l+h}    # Combine
+    set{aux, x, l}                    # Left
+    merge_into{dn, aux+l, x+l, m, h}  # Right
+    merge_into{dn, x, aux, l, l+h}    # Combine
   }
 }
 
@@ -39,12 +39,12 @@ def powersort_init{ns} = {
   }
 }
 
-glide_sort{T, min_run, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
+glide_sort{dn, T, min_run, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
 
   def base_sort{x, n} = sort{x, n, aux, *u8~~stack - *u8~~aux}
-  def merge_2{x, l, r}       = merge_pair{x, l, l+r, *T~~aux}
-  def merge_3{x, l, m, r}    = triple_merge{T}(x, l, m, r, *T~~aux)
-  def merge_4{x, a, b, c, d} = quad_merge{x, a, b, c, d, *T~~aux}
+  def merge_2{x, l, r}       = merge_pair{dn, x, l, l+r, *T~~aux}
+  def merge_3{x, l, m, r}    = triple_merge{dn, T}(x, l, m, r, *T~~aux)
+  def merge_4{x, a, b, c, d} = quad_merge{dn, x, a, b, c, d, *T~~aux}
 
   # A logical run consists of a length (e.g. nl) and sortedness (sl)
   # The starting position is maintained separately
@@ -60,12 +60,9 @@ glide_sort{T, min_run, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = 
     s:U = 0
     def done = makelabel{}
     if (r >= min_run) {
-      desc := x->0 > x->1  # Run is descending
-      l:U = 2              # Run length
-      def follow_run{cmp} = {
-        while (l < r and cmp{x->(l-1), x->l}) ++l
-      }
-      if (not desc) follow_run{<=}; else follow_run{>}
+      def desc_len = find_run{dn, x, r}
+      desc:u1 = tupsel{0,desc_len}  # Run is descending
+      l:U     = tupsel{1,desc_len}  # Run length
 
       if (l >= min_run) {
         if (desc) reverse{x, l}
@@ -75,7 +72,7 @@ glide_sort{T, min_run, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = 
       r = min_run
     }
     if (eager) {
-      piposort{T}(x, r, *T~~aux)
+      piposort{dn, T}(x, r, *T~~aux)
       s = SORTED
     }
     setlabel{done}

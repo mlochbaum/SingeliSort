@@ -8,24 +8,24 @@
 # them adapt slightly to already-sorted data
 
 # Sort exactly 2 elements branchlessly
-def sort_2{dst, src} = {
-  c := src >* src+1
+def sort_2{dn, dst, src} = {
+  c := src >*{dn} src+1
   t := src->(~c)
   dst <-{0} src->c
   dst <-{1} t
   c
 }
-def sort_2{ptr} = sort_2{ptr, ptr}
+def sort_2{dn, ptr} = sort_2{dn, ptr, ptr}
 
 # 0 to 3 elements, could be considered a bubble sort or insertion sort
-def sort_lt4{dst, src, n} = {
+def sort_lt4{dn, dst, src, n} = {
   def mov = ~match{dst,src}
   if (n > 1) {
-    sort_2{dst, src}
+    sort_2{dn, dst, src}
     if (n > 2) {
       if (mov) dst <-{2} src->2
-      sort_2{dst+1}
-      sort_2{dst}
+      sort_2{dn, dst+1}
+      sort_2{dn, dst}
     }
   } else if (mov and n == 1) {
     dst <- *src
@@ -33,60 +33,60 @@ def sort_lt4{dst, src, n} = {
 }
 
 # The adaptive quad swap
-def sort_4_quad{dst, src} = {
-  def s22{dst, src} = @for_const (i to 2) sort_2{dst+2*i, src+2*i}
+def sort_4_quad{dn, dst, src} = {
+  def s22{dst, src} = @for_const (i to 2) sort_2{dn, dst+2*i, src+2*i}
   s22{dst, src}
-  if (sort_2{dst+1}) {
+  if (sort_2{dn, dst+1}) {
     s22{dst, dst}
-    sort_2{dst+1}
+    sort_2{dn, dst+1}
   }
 }
 
 # Specialized parity merging for 8 or 16 elements
 # Always use 2 rounds of merges to get from ptr to swap and back
-def sort_8_16_parity{n, sort_q, merge_h}{dst, src} = {
+def sort_8_16_parity{n, sort_q, merge_h}{dn, dst, src} = {
   def T = scaltype{dst}
   # n elements of swap space
   def swap = eachrec{{p:pT}=>{s:pT = copy{n,0}}, dst}
 
   # Sort groups of 2 or 4 elements
   def q = n/4
-  @for_const (i to 4) sort_q{dst + q*i, src + q*i}
+  @for_const (i to 4) sort_q{dn, dst + q*i, src + q*i}
 
   # Check to see if these groups need to be merged at all
-  def chk{i} = dst+(i*q - 1) >* dst+(i*q)
+  def chk{i} = dst+(i*q - 1) >*{dn} dst+(i*q)
   if (chk{1} or chk{2} or chk{3}) {
     # Two rounds of merging: dst to swap in two parts, then back
     def h = n/2
-    @for_const (i to 2) parity_merge_const{h, swap + h*i, dst + h*i}
-    merge_h{dst, swap}
+    @for_const (i to 2) parity_merge_const{dn, h, swap + h*i, dst + h*i}
+    merge_h{dn, dst, swap}
   }
 }
 def sort_8_parity = sort_8_16_parity{
   8, sort_2,
-  {d,s}=>parity_merge_const{8, d, s}
+  {dn,d,s}=>parity_merge_const{dn, 8, d, s}
 }
 def sort_16_parity = sort_8_16_parity{
   16, sort_4_quad,
-  {d,s}=>parity_merge{eltype{type{d}}, 0}(d, s, 8, 16)
+  {dn,d,s}=>parity_merge{dn, eltype{type{d}}, 0}(d, s, 8, 16)
 }
 
-def sort_lt32{dst, src, n:U, max} = {
+def sort_lt32{dn, dst, src, n:U, max} = {
   def use{l, sort} = {
-    sort{dst, src}
+    sort{dn, dst, src}
     def cpy{dst,src} = {
       if (isid{src} or (not dst===src and dst!=src)) {
         @for (dst,src over _ from l to n) dst=src
       }
     }
     eachrec{cpy, dst, src}
-    insertion_finish{dst, dst, l, n}
+    insertion_finish{dn, dst, dst, l, n}
   }
-  if      (max <=  4 or n <  4) sort_lt4{dst, src, n}
+  if      (max <=  4 or n <  4) sort_lt4{dn, dst, src, n}
   else if (max <=  8 or n <  8) use{ 4, sort_4_quad}
   else if (max <= 16 or n < 16) use{ 8, sort_8_parity}
   else                          use{16, sort_16_parity}
 }
-def sort_lt32{dst, src, n:U} = sort_lt32{dst, src, n, 32}
-def sort_lt32{ptr, n:U, max & knum{max}} = sort_lt32{ptr, ptr, n, max}
-def sort_lt32{ptr, n:U} = sort_lt32{ptr, ptr, n}
+def sort_lt32{dn, dst, src, n:U} = sort_lt32{dn, dst, src, n, 32}
+def sort_lt32{dn, ptr, n:U, max & knum{max}} = sort_lt32{dn, ptr, ptr, n, max}
+def sort_lt32{dn, ptr, n:U} = sort_lt32{dn, ptr, ptr, n}

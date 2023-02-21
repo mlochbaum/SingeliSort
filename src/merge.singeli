@@ -2,49 +2,49 @@
 
 # Parity merge: branchless
 # Main data movement
-def parity_pos{left, right, dst, i} = {
+def parity_pos{dn, left, right, dst, i} = {
   l := left->0; r := right->i
-  c := l <= r
+  c := l <={dn} r
   if (c) r=l; dst <-{i} r
   right -= c
   left  += c
 }
-def parity_neg{left, right, dst, i} = {
+def parity_neg{dn, left, right, dst, i} = {
   l := left->(-i); r := right->0
-  c := l <= r
+  c := l <={dn} r
   if (c) l=r; dst <-{-i} l
   right -= c
   left  += c
 }
 
 # Merge halves of length-n array with constant n (4 and 8 used)
-def parity_merge_const{n, dst, src} = {
+def parity_merge_const{dn, n, dst, src} = {
   def h = n / 2
   left := clone{src}; right := src + h; dstc := clone{dst}
-  @for_const (i to h) parity_pos{left, right, dstc, i}
+  @for_const (i to h) parity_pos{dn, left, right, dstc, i}
 
   left = src + (h-1); right = src + (n-1); dstc = dst + (n-1)
-  @for_const (i to h) parity_neg{left, right, dstc, i}
+  @for_const (i to h) parity_neg{dn, left, right, dstc, i}
 }
 
 # Merge halves of array
 # Requires half == n/2
-parity_merge{T, handle_odd}(dst:*T, src:*T, half:U, n:U) : void = {
+parity_merge{dn, T, handle_odd}(dst:*T, src:*T, half:U, n:U) : void = {
   lpos := src           ; rpos := src + half ; dpos := dst
   lneg := src + half - 1; rneg := src + n - 1; dneg := dst + n - 1
 
   if (handle_odd and n%2) {
-    parity_pos{lpos, rpos, dpos, 0}
+    parity_pos{dn, lpos, rpos, dpos, 0}
     ++rpos; ++dpos
   }
   @for_unroll{2} (i to n/2) {
-    parity_pos{lpos, rpos, dpos, i}
-    parity_neg{lneg, rneg, dneg, i}
+    parity_pos{dn, lpos, rpos, dpos, i}
+    parity_neg{dn, lneg, rneg, dneg, i}
   }
 }
 
 # Guarded parity merge that works on any combination of lengths
-parity_merge_any{T}(dst:*T, src:*T, left:U, n:U) : void = {
+parity_merge_any{dn, T}(dst:*T, src:*T, left:U, n:U) : void = {
   right := n - left
   half := n/2
 
@@ -79,12 +79,12 @@ parity_merge_any{T}(dst:*T, src:*T, left:U, n:U) : void = {
     cut{*shneg, {v,i}=>{ cmp{v, lopos->i   }}, setneg}
     cut{*shpos, {v,i}=>{~cmp{v, loneg->(-i)}}, setpos}
   }
-  if      (left  < half) cut_either{left, lneg,lpos, right,rneg,rpos, <=}
-  else if (right < half) cut_either{right,rneg,rpos, left, lneg,lpos, < }
+  if      (left  < half) cut_either{left, lneg,lpos, right,rneg,rpos, <={dn}}
+  else if (right < half) cut_either{right,rneg,rpos, left, lneg,lpos, < {dn}}
 
   @for_unroll{2} (i to half) {
-    parity_pos{lpos, rpos, dpos, i}
-    parity_neg{lneg, rneg, dneg, i}
+    parity_pos{dn, lpos, rpos, dpos, i}
+    parity_neg{dn, lneg, rneg, dneg, i}
   }
   if (n%2) {
     l := lpos->0; r := rpos->half
@@ -95,20 +95,20 @@ parity_merge_any{T}(dst:*T, src:*T, left:U, n:U) : void = {
 
 # Merge arrays of length l and n-l starting at a, using buffer aux
 # Can be done without moving both sides, but this way's easy
-def merge_pair{x:pT, left:U, n:U, aux:pT} = {
+def merge_pair{dn, x:pT, left:U, n:U, aux:pT} = {
   set{aux, x, n}
-  parity_merge_any{eltype{pT}}(x, aux, left, n)
+  parity_merge_any{dn, eltype{pT}}(x, aux, left, n)
 }
 
 # Merge array x of size n, if units of length block are pre-sorted
-def merge_from{x:pT, n:U, aux:pT, block} = {
+def merge_from{dn, x:pT, n:U, aux:pT, block} = {
   def T = eltype{pT}
   src:=x; dst:=aux
   w:U = block; while (w < n) {
     ww:=2*w
     i:U=0; while (i < n-w) {
       l := n-i; if (l>ww) l=ww
-      parity_merge_any{T}(dst+i, src+i, w, l)
+      parity_merge_any{dn, T}(dst+i, src+i, w, l)
       i += ww
     }
     if (i < n) set{dst+i, src+i, n-i}
@@ -120,9 +120,9 @@ def merge_from{x:pT, n:U, aux:pT, block} = {
 
 # A simple bottom-down and not-very-adaptive merge sort using
 # branchless merges in sets of 4
-piposort{T}(x:*T, n:U, aux:*T) : void = {
+piposort{dn, T}(x:*T, n:U, aux:*T) : void = {
   if (n < 32) {
-    sort_lt32{x, n}
+    sort_lt32{dn, x, n}
     return{}
   }
   # Approximate halves n = h1+h2 and quarters h1=q1+q2, h2=q3+q4
@@ -130,7 +130,7 @@ piposort{T}(x:*T, n:U, aux:*T) : void = {
   h2 := n - h1; q3 := h2 / 2; q4 := h2 - q3
 
   # Sort each quarter
-  def recur = piposort{T}
+  def recur = piposort{dn, T}
   recur(x          , q1, aux)
   recur(x + q1     , q2, aux)
   recur(x + h1     , q3, aux)
@@ -150,24 +150,24 @@ piposort{T}(x:*T, n:U, aux:*T) : void = {
     return{}
   }
 
-  def merge = parity_merge{T, 1}
+  def merge = parity_merge{dn, T, 1}
   merge(aux     , x     , q1, h1)
   merge(aux + h1, x + h1, q3, h2)
   merge(x       , aux   , h1, n)
 }
 
 # Requires dst != aux; src may be dst or aux
-half_piposort{T}(dst:*T, src:*T, n:U, aux:*T) : void = {
+half_piposort{dn, T}(dst:*T, src:*T, n:U, aux:*T) : void = {
   if (n < 32) {
-    sort_lt32{dst, src, n}
+    sort_lt32{dn, dst, src, n}
     return{}
   }
 
   h1 := n / 2; h2 := n - h1
 
-  def recur = half_piposort{T}
+  def recur = half_piposort{dn, T}
   recur(aux,      src,      h1, dst)
   recur(aux + h1, src + h1, h2, dst + h1)
 
-  parity_merge{T, 1}(dst, aux, h1, n)
+  parity_merge{dn, T, 1}(dst, aux, h1, n)
 }

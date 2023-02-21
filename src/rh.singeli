@@ -11,7 +11,7 @@ def thresh_init = 2*BLOCK
 
 # Main Robin Hood insertion algorithm
 # Fill and empty the buffer. Doesn't include merges.
-def rh_insert{x:*T, len:U, buf:*T, buflen, pos, empty:T} = {
+def rh_insert{dn, x:*T, len:U, buf:*T, buflen, pos, empty:T} = {
   set{buf, empty, buflen}
 
   # Stolen blocks go to xb
@@ -27,7 +27,7 @@ def rh_insert{x:*T, len:U, buf:*T, buflen, pos, empty:T} = {
       buf <-{j} x
     } else {
       # Collision
-      end := insertval{j, x, h, buf, empty}
+      end := insertval{dn, j, x, h, buf, empty}
       # Big collision
       if (RARE{end-j >= threshold}) {
         threshold = BLOCK
@@ -46,16 +46,16 @@ def rh_insert{x:*T, len:U, buf:*T, buflen, pos, empty:T} = {
 
 # Insert an element val to buf at init (cur := buf->init)
 # Return the location after the last value moved
-def insertval{init:U, val:T, cur:T, buf:*T, empty:T} = {
+def insertval{dn, init:U, val:T, cur:T, buf:*T, empty:T} = {
   ins:=init; end:=init
   # Reposition elements after val branchlessly during the search
   do {
-    ++end; n := buf->end  # Might write over this
-    def c = val >= cur    # If we have to move past that entry
-    buf <-{end-c} cur     # Reposition cur
-    ins += c              # Increments until val's final location found
+    ++end; n := buf->end   # Might write over this
+    def c = val >={dn} cur # If we have to move past that entry
+    buf <-{end-c} cur      # Reposition cur
+    ins += c               # Increments until val's final location found
     cur = n
-  } while (cur!=empty)    # Until the end of the chain
+  } while (cur!=empty)     # Until the end of the chain
   buf <-{ins} val
   1+end   # Account for just-inserted val
 }
@@ -107,7 +107,7 @@ def checkdist{sample, num:U, minv:T, n:U, r} = {
   checkdist{sample, num, pos}
 }
 
-def rh_main{alloc, check}{x:*T, n:U, minv:T, maxv, r} = {
+def rh_main{dn, alloc, check}{x:*T, n:U, minv:T, maxv, r} = {
   def pos = getposfn{minv, n, r}
 
   # Goes down to BLOCK once we know we have to merge
@@ -118,32 +118,32 @@ def rh_main{alloc, check}{x:*T, n:U, minv:T, maxv, r} = {
   # Treat maxv as "empty": the buffer will swallow these,
   # but they can be recovered by counting
   empty := maxv
-  xb := rh_insert{x, n, aux, sz, pos, empty}
+  xb := rh_insert{dn, x, n, aux, sz, pos, empty}
 
   # Merge stolen blocks back in if necessary
   l:U = U<~(xb-x)   # Size of those blocks
   if (l > 0) {
     # Sort x[0..l]
-    merge_from{x, l, aux, BLOCK}
+    merge_from{dn, x, l, aux, BLOCK}
     # And merge with the rest of x
-    merge_pair{x, l, n, aux}
+    merge_pair{dn, x, l, n, aux}
   }
 }
 
 # Sort array of ints with length n.
 # Assume there's enough aux space.
-rh_sort{T, range}(x:*T, n:U, aux:*T) : void = {
+rh_sort{dn, T, range}(x:*T, n:U, aux:*T) : void = {
   # Find the range.
   def mm=range{x, n}; minv:=tupsel{0,mm}; maxv:=tupsel{1,mm}
   r:U = dist{U, minv, maxv}            # Size of range
   if (r/4 < n) {
     count_sort{x, n, *U~~aux, minv, r+1}
   } else {
-    rh_main{{sz}=>aux, {pos}=>1}{x, n, minv, maxv, r}
+    rh_main{dn, {sz}=>aux, {pos}=>1}{x, n, minv, maxv, r}
   }
 }
 
-def try_rh{dst:pT, src:pT, n:U, aux:pT, aux_bytes:U, minv, maxv} = {
+def try_rh{dn, dst:pT, src:pT, n:U, aux:pT, aux_bytes:U, minv, maxv} = {
   na := aux_bytes / bytes{eltype{pT}}
   def exit = makelabel{}
   def req{cond} = { if (not cond) goto{exit} }
@@ -156,7 +156,7 @@ def try_rh{dst:pT, src:pT, n:U, aux:pT, aux_bytes:U, minv, maxv} = {
     aux
   }
   r:U = dist{U, minv, maxv}
-  rh_main{alloc, {pos}=>1}{dst, n, minv, maxv, r}
+  rh_main{dn, alloc, {pos}=>1}{dst, n, minv, maxv, r}
   
   return{}
   setlabel{exit}

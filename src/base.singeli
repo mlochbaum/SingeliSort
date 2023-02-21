@@ -24,6 +24,7 @@ def swap{a:T, b:T & tptr{T}} = { t := *a; a <- *b; b <- t }
 
 def __pnt{t & ktup{t}} = __pnt{single{t}}
 def ptr_gt{a,b} = load{a,0} > load{b,0}
+def ptr_lt{a,b} = load{a,0} < load{b,0}
 
 def usize = primtype{'u',width{*void}}
 def U = usize
@@ -57,12 +58,15 @@ extend perv2{__shr}
 extend perv1{__decr}
 def eachrec{fn,...a} = { (extend (perv{tuplen{a}}){fn}){...a} }
 
-def extend ecmp{f} = {
+local def extend ecmp{f,g} = {
   def f{a,b & ktup{a} & ktup{b}} = f{first{a},first{b}}
+  def f{dn==0} = f
+  def f{dn==1} = g
 }
-extend ({...f}=>each{ecmp,f}){
+local def dn_ind = tup{0,1, 3,2, 5,4, 7,6}
+extend ({...f}=>each{ecmp,f,tupsel{dn_ind,f}}){
   __eq, __ne, __lt, __gt, __le, __ge,
-  ptr_gt
+  ptr_gt, ptr_lt
 }
 
 def type{s & ktup{s}} = type{first{s}}

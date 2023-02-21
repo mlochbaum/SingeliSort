@@ -41,3 +41,14 @@ def index_options{sort, n:U, test, itypes} = {
   sort{U}
   setlabel{done}
 }
+
+# Descending-ness and length of the first run in x
+def find_run{dn, x, n:U} = {
+  desc := x->0 >{dn} x->1  # Run is descending
+  l:U = 2                  # Run length
+  def follow_run{cmp} = {
+    while (l < n and cmp{x->(l-1), x->l}) ++l
+  }
+  if (not desc) follow_run{<={dn}}; else follow_run{>{dn}}
+  tup{desc, l}
+}
