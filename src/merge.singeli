@@ -60,10 +60,11 @@ def merge_from{x:pT, n:U, aux:pT, block} = {
       parity_merge{T, 1}(dst+i, src+i, w, l)
       i += ww
     }
+    if (i < n) set{dst+i, src+i, n-i}
+    t:=src; src=dst; dst=t  # <-> doesn't work because they're pointers, oops
     w = ww
-    src <-> dst
   }
-  if (dst != x) set{x, dst, n}
+  if (src != x) set{x, src, n}
 }
 
 # A simple bottom-down and not-very-adaptive merge sort using
