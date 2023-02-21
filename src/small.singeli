@@ -75,7 +75,9 @@ def sort_lt32{dst, src, n:U, max} = {
   def use{l, sort} = {
     sort{dst, src}
     def cpy{dst,src} = {
-      if (isid{src} or dst!=src) @for (dst,src over _ from l to n) dst=src
+      if (isid{src} or (not dst===src and dst!=src)) {
+        @for (dst,src over _ from l to n) dst=src
+      }
     }
     eachrec{cpy, dst, src}
     insertion_finish{dst, dst, l, n}
