@@ -157,7 +157,7 @@ piposort{dn, T}(x:*T, n:U, aux:*T) : void = {
 }
 
 # Requires dst != aux; src may be dst or aux
-half_piposort{dn, T}(dst:*T, src:*T, n:U, aux:*T) : void = {
+pisort{dn, T}(dst:*T, src:*T, n:U, aux:*T) : void = {
   if (n < 32) {
     sort_lt32{dn, dst, src, n}
     return{}
@@ -165,7 +165,7 @@ half_piposort{dn, T}(dst:*T, src:*T, n:U, aux:*T) : void = {
 
   h1 := n / 2; h2 := n - h1
 
-  def recur = half_piposort{dn, T}
+  def recur = pisort{dn, T}
   recur(aux,      src,      h1, dst)
   recur(aux + h1, src + h1, h2, dst + h1)
 

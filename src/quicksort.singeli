@@ -6,7 +6,7 @@ include './arith'  # Logs and square roots
 def base_cases{dn, dst:*T, src:*T, aux:*T, n:U, aux_bytes:U, min:T} = {
   # Short array
   if (n < 192) {
-    half_piposort{dn, T}(dst, src, n, aux)
+    pisort{dn, T}(dst, src, n, aux)
     return{}
   }
 
@@ -98,13 +98,13 @@ def flux_recur{dn, recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_byte
   # Sort the right-hand side, moving it from rsrc to dst
   rdst := dst + m
   if (r > most) { # Unbalanced
-    half_piposort{dn, T}(rdst, rsrc, r, aux)
+    pisort{dn, T}(rdst, rsrc, r, aux)
   } else {
     recur{rsrc, rdst, aux, r, aux_bytes, piv, rh_state}
   }
 
   if (l > most) { # Unbalanced
-    half_piposort{dn, T}(dst, dst, l, aux)
+    pisort{dn, T}(dst, dst, l, aux)
     return{}
   }
 
