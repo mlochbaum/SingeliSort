@@ -103,5 +103,5 @@ radpack32(dst:*u32, src:*u32, n:u32, aux:*void, min:u32) : void = {
   @for (x16, src over n) x16 = u16<~(src - min)
   def rad{C} = radix_inplace{x16, n, x16 + n, *C~~aux}
   index_options{rad, n, radix_fits, tup{u8, u32}}
-  i:u32=n; while (i>0) { --i; dst <-{i} min + u32^~(x16->i) }
+  @for_backwards (x16, dst over n) dst = min + u32^~x16
 }

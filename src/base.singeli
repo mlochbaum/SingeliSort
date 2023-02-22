@@ -100,15 +100,23 @@ extend perv1{get}
 
 def for{vars,begin,end,block} = {
   def e = usize^~end
-  i:usize = begin
-  while (i<e) {
+  i := usize^~begin
+  while (i < e) {
     exec{i, vars,block}
     i += 1
   }
 }
+def for_backwards{vars,begin,end,block} = {
+  i := usize^~end
+  def e = usize^~begin
+  while (i > e) {
+    i -= 1
+    exec{i, vars,block}
+  }
+}
 def for_const{vars,begin,end,block} = {
-  if (begin<end) {
-    for_const{vars,begin,end-1,block}
+  if (begin < end) {
+    for_const{vars,begin, end-1, block}
     exec{end-1, vars,block}
   }
 }
@@ -116,11 +124,11 @@ def for_unroll{unr}{vars,begin,end,block} = {
   def e = usize^~end
   i:usize = begin
   eu := e & ~ usize~~(unr-1)
-  while (i<eu) {
+  while (i < eu) {
     @for_const (j to unr) exec{i+j, vars,block}
     i += unr
   }
-  while (i<e) {
+  while (i < e) {
     exec{i, vars,block}
     i += 1
   }

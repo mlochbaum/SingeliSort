@@ -56,9 +56,7 @@ def dropmerge{sort, guard}{x:pT, len:U, aux:pT} = {
   # Custom merge: from end, expect drop < back by a lot
   # Like an insertion sort where we don't reset the insertion point
   def write{v} = { --i; x <-{i} v }  # i==len currently
-  while (drops > 0) {
-    # Pull another element from the back of the drop list
-    --drops; d := dropped->drops
+  @for_backwards (d in dropped over drops) {
     # Find where to insert and make room
     v:=undefined{T}; jn:=undefined{U}
     while ((not guard or 0<j) and d < (v = x->(jn=j-1))) {
@@ -117,8 +115,7 @@ def drape_sort{sort}{x:pT, n:U, aux:pT} = {
     stop := first_drop
     while (stop<last_drop and cmp{aux->stop, x->0}) ++stop
     # Main loop
-    di := last_drop; while (di > stop) {
-      --di; d := aux->di
+    @for_backwards (d in aux from stop to last_drop) {
       v:=undefined{T}; jn:=undefined{U}
       while (cmp{d, (v = x->(jn=j-1))}) { --i; x <-{i} v; j=jn }
       --i; x <-{i} d
