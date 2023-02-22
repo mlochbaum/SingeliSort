@@ -81,34 +81,34 @@ def stealblocks{start:U, end:U, buf:*T, dst:*T, pos, empty:T} = {
 
 # Get value to index conversion
 # Modifies r!
-def getposfn{minv, n:U, r} = {
+def getposfn{dn, minv, n:U, r} = {
   sh:U = 0                              # Contract to fit range
   while (r>5*n) { ++sh; r=r>>1 }        # Shrink to stay at O(n) memory
-  {v} => dist{U,minv,v} >> sh
+  {v} => dist{dn}{U,minv,v} >> sh
 }
 
 # Statistical check of samples to make sure it's not too clumpy
-def checkdist{sample, num:U, pos} = {
+def checkdist{dn, sample, num:U, pos} = {
   prev := pos{sample->0}
   score:U = 0
   threshold := 60 + num/6
   good:u1 = 0  # result
   def bad = makelabel{}
   @for (sample over _ from 1 to num) {
-    next:=pos{sample}; d:=next-prev; prev=next
+    next:=pos{sample}; d:=next-{dn}prev; prev=next
     if (d<16) { score+=16-d; if (score >= threshold) goto{bad} }
   }
   good = 1
   setlabel{bad}
   good
 }
-def checkdist{sample, num:U, minv:T, n:U, r} = {
-  def pos = getposfn{minv, n, clone{r}}
-  checkdist{sample, num, pos}
+def checkdist{dn, sample, num:U, minv:T, n:U, r} = {
+  def pos = getposfn{dn, minv, n, clone{r}}
+  checkdist{dn, sample, num, pos}
 }
 
 def rh_main{dn, alloc, check}{x:*T, n:U, minv:T, maxv, r} = {
-  def pos = getposfn{minv, n, r}
+  def pos = getposfn{dn, minv, n, r}
 
   # Goes down to BLOCK once we know we have to merge
   sz:U = r + thresh_init                # Buffer size
@@ -134,8 +134,8 @@ def rh_main{dn, alloc, check}{x:*T, n:U, minv:T, maxv, r} = {
 # Assume there's enough aux space.
 rh_sort{dn, T, range}(x:*T, n:U, aux:*T) : void = {
   # Find the range.
-  def mm=range{x, n}; minv:=tupsel{0,mm}; maxv:=tupsel{1,mm}
-  r:U = dist{U, minv, maxv}            # Size of range
+  def mm=range{dn, x, n}; minv:=tupsel{0,mm}; maxv:=tupsel{1,mm}
+  r:U = dist{dn}{U, minv, maxv}        # Size of range
   if (r/4 < n) {
     count_sort{x, n, *U~~aux, minv, r+1}
   } else {

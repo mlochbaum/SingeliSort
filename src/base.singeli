@@ -69,6 +69,9 @@ extend ({...f}=>each{ecmp,f,tupsel{dn_ind,f}}){
   ptr_gt, ptr_lt
 }
 
+def __sub{dn==0} = __sub
+def __sub{dn==1}{a,b} = b-a
+
 def type{s & ktup{s}} = type{first{s}}
 def scaltype{T} = (if (tptr{T}) scaltype{eltype{T}}; else T)
 def scaltype{x & ~ktyp{x}} = scaltype{type{x}}

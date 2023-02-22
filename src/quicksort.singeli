@@ -12,7 +12,7 @@ def base_cases{dn, dst:*T, src:*T, aux:*T, n:U, aux_bytes:U, min:T} = {
 
   # Distribution base cases
   if (isint{T}) {
-    range := dist{min, dst->n}
+    range := dist{dn}{min, dst->n}
     if (U^~(range/4) < n and U^~range < aux_bytes/bytes{U}) {
       # Always sort in place on dst
       # Counting sort could have a different src/dst, but if src isn't
@@ -122,7 +122,7 @@ flux_loop{dn, T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8) :
     def proc_pivots{pivots, num} = {
       if (isint{T} and n<=1<<17 and rh_state!=RH_APPROVED) {
         # 1 if tried and not approved, 2 for RH_APPROVED
-        rh_state = 1 + u8^~checkdist{pivots, num, min, n, dist{U, min, dst->n}}
+        rh_state = 1 + u8^~checkdist{dn, pivots, num, min, n, dist{dn}{U, min, dst->n}}
       }
     }
     def fn{gen} = bind{call, gen{dn, T}}

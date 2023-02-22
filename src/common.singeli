@@ -21,17 +21,21 @@ def filter_neq{dst, src, len, v} = {
   d
 }
 
-def findrange{arr, len} = {
+def findrange{dn, arr, len} = {
   minv:=arr->0; maxv:=minv;
   @for (arr over i from 1 to len) {
-    if (arr<minv) minv=arr; if (arr>maxv) maxv=arr;
+    if (arr <{dn} minv) minv=arr
+    if (arr >{dn} maxv) maxv=arr;
   }
   tup{minv,maxv}
 }
 def readrange{arr, len} = tup{arr->(-1), arr->len}
 
-def dist{a:T, b:T} = primtype{'u',width{T}} ~~ (b-a)
-def dist{U,a,b} = U ^~ dist{a,b}
+def dist{dn} = {
+  def dsub{a:T, b:T} = primtype{'u',width{T}} ~~ (b -{dn} a)
+  def dsub{U,a,b} = U ^~ dsub{a,b}
+}
+def dist{...as & 1 < tuplen{as}} = dist{0}{...as}
 
 # Try the given types to lower constant overhead on small arrays
 def index_options{sort, n:U, test, itypes} = {
