@@ -116,7 +116,7 @@ glide_sort{dn, T, min_run, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : voi
   def Num = 0; def Sort = 1; def Depth = 2; def Frame = 3
   def has_stack{} = stack < stack_top
   def merge_p{} = {
-    logical_merge{xp, clone{stack->Num}, clone{stack->Sort}, np, sp}
+    logical_merge{xp, stack->Num, clone{stack->Sort}, np, sp}
     stack += Frame
   }
 

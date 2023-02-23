@@ -20,7 +20,7 @@ def parity_neg{dn, left, right, dst, i} = {
 # Merge halves of length-n array with constant n (4 and 8 used)
 def parity_merge_const{dn, n, dst, src} = {
   def h = n / 2
-  left := clone{src}; right := src + h; dstc := clone{dst}
+  left := src; right := src + h; dstc := dst
   @for_const (i to h) parity_pos{dn, left, right, dstc, i}
 
   left = src + (h-1); right = src + (n-1); dstc = dst + (n-1)
