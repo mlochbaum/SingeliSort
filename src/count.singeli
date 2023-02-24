@@ -19,14 +19,16 @@ def count_fill{x, n, count, min, range} = {
   }
 }
 
-def count_sum{x, n, count, min, range} = {
+def count_sum{x, n, count, min:T, range:U} = {
   # Count, and zero, the array
   do_count{x, n, count, min, 1}
 
   # Write differences to x
-  x <-{0} min
-  end:=range-1; while (count->end == 0) --end # Assume n>0
-  w:=x; @for (count over end) { w+=count; incrp{w} }
+  j:U = 0                        # Index in count
+  r := undefined{U}              # Running total
+  while ((r=count->j) == 0) ++j  # Skip leading 0 counts quickly
+  x <- min + T<~j                # First result
+  while (r < n) { incrp{x+r}; ++j; r += count->j }
 
   prefix_sum{x, n}
 }
