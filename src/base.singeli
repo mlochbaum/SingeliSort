@@ -69,6 +69,11 @@ extend ({...f}=>each{ecmp,f,tupsel{dn_ind,f}}){
   ptr_gt, ptr_lt
 }
 
+# ++{1} is -- and +={1} is -=
+def __incr{dn==0} = __incr
+def __incr{dn==1} = __decr
+
+# -{1} swaps arguments
 def __sub{dn==0} = __sub
 def __sub{dn==1}{a,b} = b-a
 

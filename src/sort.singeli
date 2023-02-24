@@ -18,7 +18,7 @@ sort8{dn, T}(x:*T, n:U, aux:*void) : void = {
   } else if (radix_fits{n,u8}) {
     radix_inplace{x, n, *T~~aux, *u8~~(aux+n)}
   } else {
-    count_sort{x, n, aux}
+    count_sort{dn, x, n, aux}
   }
 }
 
@@ -29,7 +29,7 @@ sort16{dn, T}(x:*T, n:U, aux:*void) : void = {
   } else if (n < 1<<15) {
     radix{x, n, aux}
   } else {
-    count_sort{x, n, aux}
+    count_sort{dn, x, n, aux}
   }
 }
 

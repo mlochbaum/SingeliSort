@@ -12,13 +12,15 @@ def base_cases{dn, dst:*T, src:*T, aux:*T, n:U, aux_bytes:U, min:T} = {
 
   # Distribution base cases
   if (isint{T}) {
-    range := dist{dn}{min, dst->n}
+    max := dst->n
+    range := dist{dn}{min, max}
     if (U^~(range/4) < n and U^~range < aux_bytes/bytes{U}) {
       # Always sort in place on dst
       # Counting sort could have a different src/dst, but if src isn't
       # dst then it's equal to aux, and we need that space
       if (src != dst) set{dst, src, n}
-      count_sort{dst, u32<~n, *u32~~aux, min, u32<~range + 1}
+      def nmin = (if (not dn) min; else max)
+      count_sort{dn, dst, u32<~n, *u32~~aux, nmin, u32<~range + 1}
       return{}
     }
     if (width{T} == 32 and n <= (1<<16) and range < (1<<16)) {

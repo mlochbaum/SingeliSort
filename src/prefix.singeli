@@ -16,11 +16,12 @@ local def prefix_word{wi, ww, x, add} = {
 
 # Inclusive, probably slightly faster
 # Used by counting sort
-def prefix_sum = {
+# If dn==1, subtract instead of adding
+def prefix_sum{dn} = {
   # Basic pattern, mutates sum
   def psf{cfor}{x:*T, len, sum:T} = {
     @cfor (x over len) {
-      sum += x
+      sum +={dn} x
       x = sum
     }
   }
@@ -34,10 +35,10 @@ def prefix_sum = {
     nw := len / l
     xw := *usize~~x
     sum := usize^~primtype{'u',wc}~~init
-    # Adjust for signed overflow with xor
-    def fixsum = { if (not issigned{T}) { {s}=>s } else {
-      def off = 1<<(width{T}-1)
-      x <-{0} x->0 ^ -off
+    # Adjust for signed overflow and descending with xor
+    def fixsum = { if (not (issigned{T} or dn)) { {s}=>s } else {
+      def off = (1<<(width{T}-1)) - dn
+      sum ^= off
       xor:usize = off; prefix_word{wc, ww, xor, 0}
       {s} => xor ^ s
     } }
