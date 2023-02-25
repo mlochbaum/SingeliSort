@@ -1,89 +1,76 @@
 # Prefix sums
+# Inclusive prefix sum is used everywhere: simpler to write and faster
+# If dn==1, subtract instead of adding
+
+local {
 
 # Prefix sum on the size-wi units of word(s) x of width ww
 # Values in x must be registers: the sum is done in place
-local def prefix_word{wi, ww, x} = {
+def prefix_word{wi, ww, x} = {
   # Shift amounts, e.g. tup{8, 16, 32}
   def shifts{w} = { if (w<ww) merge{w, shifts{2*w}}; else tup{} }
   # Add each of these in succession, interleaving if x is a tuple
   each{{k} => {x += x<<k}, shifts{wi}}
 }
 # Add incoming values first
-local def prefix_word{wi, ww, x, add} = {
+def prefix_word{wi, ww, x, add} = {
   x += add
   prefix_word{wi, ww, x}
 }
 
-# Inclusive, probably slightly faster
-# Used by counting sort
-# If dn==1, subtract instead of adding
-def prefix_sum{dn} = {
-  # Basic pattern, mutates sum
-  def psf{cfor}{x:*T, len, sum:T} = {
-    @cfor (x over len) {
-      sum +={dn} x
-      x = sum
-    }
+# Basic pattern, mutates sum
+def psf{dn, cfor}{x, len, sum} = {
+  @cfor (x over len) {
+    sum +={dn} x
+    x = sum
   }
+}
 
-  def ps{x:*T, len, init:T} = psf{for_unroll{4}}{x, len, clone{init}}
+# SWAR optimization for 1- or 2-byte counts and no SIMD
+def ps_words{x, len, sum, out_fn} = {
+  # Width of an element and a word
+  def we = width{scaltype{x}}; def ww = width{U}
+  # Number of elements in a word, and total words
+  def l = ww / we
+  nw:U = len / l
+  # Word pointer(s)
+  def xw = eachrec{bind{~~,*U}, x}
+  @for (xw over nw) {
+    prefix_word{we, ww, sum, xw}
+    xw = out_fn{sum}
+    sum >>= ww-we
+  }
+  # Return the number of elements summed; caller handles tail
+  l * nw
+}
 
-  # SWAR optimization for 1- or 2-byte counts and no SIMD
-  def ps{x:*T, len, init:T & width{T}<=16} = {
-    def wc = width{T}; def ww = width{usize}
-    def l = ww / wc
-    nw := len / l
-    xw := *usize~~x
-    sum := usize^~primtype{'u',wc}~~init
+} # end local
+
+# For counting sort
+def prefix_sum{dn}{x:*T, len, init:T} = {
+  def we = width{T}
+  if (we > 16) {
+    psf{dn, for_unroll{4}}{x, len, clone{init}}
+  } else {
+    sum := U^~primtype{'u',we}~~init
     # Adjust for signed overflow and descending with xor
     def fixsum = { if (not (issigned{T} or dn)) { {s}=>s } else {
       def off = (1<<(width{T}-1)) - dn
       sum ^= off
-      xor:usize = off; prefix_word{wc, ww, xor, 0}
+      xor:U = off; prefix_word{we, width{U}, xor}
       {s} => xor ^ s
     } }
-    @for (xw over nw) {
-      prefix_word{wc, ww, sum, xw}
-      xw = fixsum{sum}
-      sum >>= ww-wc
-    }
-    lenq := l * nw
-    psf{for}{x + lenq, len - lenq, clone{T<~fixsum{sum}}}
+    # Full words
+    lenq := ps_words{x, len, sum, fixsum}
+    # Last partial word
+    psf{dn, for}{x + lenq, len - lenq, clone{T<~fixsum{sum}}}
   }
-
-  def ps{x:pT, len} = ps{x, len, eltype{pT}~~0}
-  ps
 }
 
-# Exclusive, interleaved
-def prefix_sum_excl = {
-  def ps{ptrs, len, signed & ktup{ptrs}} = {
-    # Running total initialized to 0 for each array
-    def sum = each{{_:pT}=>{s:eltype{pT}=0}, ptrs}
-    # Do the sums
-    @for (x in ptrs over len) {
-      sum += x
-      x = sum
-    }
-  }
-
-  def setw{c} = width{eltype{type{tupsel{0,c}}}} # single element type width
-
-  # SWAR optimization for 1- or 2-byte counts and no SIMD
-  # Assumes total size is a whole number of words
-  def ps{ptrs, len, signed & ktup{ptrs} & 16>=setw{ptrs}} = {
-    # Width of count and word
-    def wc = setw{ptrs}; def ww = width{usize}
-    # Word pointers
-    def pwords = each{bind{~~,*usize}, ptrs}
-    # Sum registers initialized to 0
-    def sum = each{{_}=>{s:usize=0}, ptrs}
-    # Length of the loop
-    @for (xw in pwords over len * wc / ww) {
-      prefix_word{wc, ww, sum, xw}
-      xw = sum
-      sum >>= ww-wc
-    }
-  }
-  ps
+# For radix sort: interleaved sums
+def prefix_sum{ptrs, len & ktup{ptrs}} = {
+  def T = scaltype{ptrs}
+  def sum{S} = each{{_}=>{s:S=0}, ptrs}
+  if (width{T} > 16) psf{0, for}{ptrs, len, sum{T}}
+  else                  ps_words{ptrs, len, sum{U}, {s}=>s}
 }

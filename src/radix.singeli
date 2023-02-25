@@ -35,7 +35,7 @@ def keyfns{len, T} = {
 # Store counts in count, which must hold steps*count_len counts
 # The result for step i is stored at tupsel{i,dsts}
 def radix_main{src, n:U, dsts, count:pC} = {
-  def T = eltype{type{src}}
+  def T = scaltype{src}
   def steps = tuplen{dsts}
   # Tuple of zeroed count arrays, and offset for signed ints
   def counts = init_counts{count, steps}
@@ -45,7 +45,7 @@ def radix_main{src, n:U, dsts, count:pC} = {
   radix_counts{single{src}, n, counts_off + 1, keys}
   # Exclusive sum of each count array (interleaved for speed)
   slice{counts, 1} <- 0
-  prefix_sum_excl{counts, count_len, issigned{scaltype{src}}}
+  prefix_sum{counts, count_len}
   # And do the radix sorting through the successive dsts
   def srcs = shiftright{tup{src}, dsts}
   each{radix_move{n}, srcs, dsts, counts_off, keys}
