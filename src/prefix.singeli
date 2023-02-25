@@ -57,21 +57,14 @@ def prefix_sum{dn} = {
 
 # Exclusive, interleaved
 def prefix_sum_excl = {
-  def sign_inds{s, i, len, tup} = i
-  def sign_inds{s==1, i, len, tup} = {
-    def j = (i + len / 2) & (len - 1)
-    shiftleft{each{{_}=>i, tup}, j}
-  }
-
   def ps{ptrs, len, signed & ktup{ptrs}} = {
     # Running total initialized to 0 for each array
     def sum = each{{_:pT}=>{s:eltype{pT}=0}, ptrs}
     # Do the sums
-    @for (i to len) {
+    @for (x in ptrs over len) {
       def prev = clone{sum}
-      def is = sign_inds{signed, i, len, ptrs}
-      sum += ptrs->is
-      ptrs <-{is} prev
+      sum += x
+      x = prev
     }
   }
 
@@ -87,12 +80,10 @@ def prefix_sum_excl = {
     # Sum registers initialized to 0
     def sum = each{{_}=>{s:usize=0}, ptrs}
     # Length of the loop
-    def len = len * wc / ww
-    @for (i to len) {
+    @for (x in pwords over len * wc / ww) {
       def prev = clone{sum}
-      def is = sign_inds{signed, i, len, ptrs}
-      prefix_word{wc, ww, sum, pwords->is}
-      pwords <-{is} prev | sum<<wc
+      prefix_word{wc, ww, sum, x}
+      x = prev | sum<<wc
       sum >>= ww-wc
     }
   }

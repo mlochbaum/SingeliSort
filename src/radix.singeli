@@ -15,28 +15,39 @@ def count_len  = 1<<radix_bits
 # Number of steps required
 def getsteps{x} = width{scaltype{x}} / radix_bits
 
+# Apply fn to the last component of the list if T is signed
+def where_signed{T, fn, list} = {
+  if (not issigned{T}) list
+  else merge{slice{list, 0, -1}, tup{fn{tupsel{-1, list}}}}
+}
+
 # Given a tuple, get corresponding key generators: bytes starting from
 # the bottom
-def keyfns{len} = {
-  def kf{sh}{v} = u8<~(v>>sh)
-  each{kf, range{len} * radix_bits}
+def keyfns{len, T} = {
+  each{
+    {sh, K} => { {v} => K<~(v>>sh) },
+    range{len} * radix_bits,                # Shifts
+    where_signed{T, {_}=>i8, copy{len, u8}} # Types
+  }
 }
 
 # Sort the n values in x with a number of radix passes equal to steps
 # Store counts in count, which must hold steps*count_len counts
 # The result for step i is stored at tupsel{i,dsts}
 def radix_main{src, n:U, dsts, count:pC} = {
+  def T = eltype{type{src}}
   def steps = tuplen{dsts}
-  # Tuple of zeroed count arrays
+  # Tuple of zeroed count arrays, and offset for signed ints
   def counts = init_counts{count, steps}
+  def counts_off = where_signed{T, {c}=>c+128, counts}
   # Count frequency of all bytes simultaneously
-  def keys = keyfns{steps}
-  radix_counts{single{src}, n, counts, keys}
+  def keys = keyfns{steps, T}
+  radix_counts{single{src}, n, counts_off, keys}
   # Exclusive sum of each count array (interleaved for speed)
   prefix_sum_excl{counts, count_len, issigned{scaltype{src}}}
   # And do the radix sorting through the successive dsts
   def srcs = shiftright{tup{src}, dsts}
-  each{radix_move{n}, srcs, dsts, counts, keys}
+  each{radix_move{n}, srcs, dsts, counts_off, keys}
 }
 
 # Zero and split into num arrays with count_len values each
