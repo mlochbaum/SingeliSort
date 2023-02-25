@@ -16,7 +16,7 @@ sort8{dn, T}(x:*T, n:U, aux:*void) : void = {
   if (n < 16) {
     sort_lt32{dn, x, n, 16}
   } else if (radix_fits{n,u8}) {
-    radix_inplace{x, n, *T~~aux, *u8~~(aux+n)}
+    radix_inplace{dn, x, n, *T~~aux, *u8~~(aux+n)}
   } else {
     count_sort{dn, x, n, aux}
   }
@@ -27,7 +27,7 @@ sort16{dn, T}(x:*T, n:U, aux:*void) : void = {
   if (n < 24) {
     sort_lt32{dn, x, n}
   } else if (n < 1<<15) {
-    radix{x, n, aux}
+    radix{dn, x, n, aux}
   } else {
     count_sort{dn, x, n, aux}
   }
@@ -40,7 +40,7 @@ grade8_16{dn, T,I}(x:*T, g:*I, n:U, aux:*void) : void = {
   } else {
     # Bucket sort; second copies of x and g are unused swap space,
     # as final x isn't needed and initial g is implicit
-    radix_grade_inplace{x, x, g, g, n, *U~~aux}
+    radix_grade_inplace{dn, x, x, g, g, n, *U~~aux}
   }
 }
 

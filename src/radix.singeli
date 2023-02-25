@@ -34,7 +34,7 @@ def keyfns{len, T} = {
 # Sort the n values in x with a number of radix passes equal to steps
 # Store counts in count, which must hold steps*count_len counts
 # The result for step i is stored at tupsel{i,dsts}
-def radix_main{src, n:U, dsts, count:pC} = {
+def radix_main{dn, src, n:U, dsts, count:pC} = {
   def T = scaltype{src}
   def steps = tuplen{dsts}
   # Tuple of zeroed count arrays, and offset for signed ints
@@ -42,10 +42,9 @@ def radix_main{src, n:U, dsts, count:pC} = {
   def counts_off = where_signed{T, {c}=>c+128, counts}
   # Count frequency of all bytes simultaneously
   def keys = keyfns{steps, T}
-  radix_counts{single{src}, n, counts_off + 1, keys}
+  radix_counts{dn, single{src}, n, counts_off, keys}
   # Exclusive sum of each count array (interleaved for speed)
-  slice{counts, 1} <- 0
-  prefix_sum{counts, count_len}
+  radix_prefix_sum{dn, n, counts, count_len}
   # And do the radix sorting through the successive dsts
   def srcs = shiftright{tup{src}, dsts}
   each{radix_move{n}, srcs, dsts, counts_off, keys}
@@ -58,10 +57,14 @@ def init_counts{space:pT, num} = {
 }
 
 # Perform all counts in a single pass
-def radix_counts{x, n, counts, keys} = {
+def radix_counts{dn, x, n, counts, keys} = {
+  # Rather than take an exclusive prefix sum in the ascending case, we
+  # write counts at an offset of 1. The descending case subtracts
+  # cumulative counts from n, so they should be inclusive with no offset
+  def counts_shift = (if (not dn) counts + 1; else counts)
   @for (x over n) {
     def incr{c, k} = incrp{c + k{x}}
-    each{incr, counts, keys}
+    each{incr, counts_shift, keys}
   }
 }
 
@@ -78,20 +81,20 @@ def radix_move{n}{src, dst, count, key} = {
 } # end local
 
 # Swap back and forth with aux, ending with the elements in x again
-def radix_inplace{x:pT, n:U, aux:pT, count:pC} = {
+def radix_inplace{dn, x:pT, n:U, aux:pT, count:pC} = {
   def steps = getsteps{x}
-  radix_main{x, n, cycle{steps,tup{aux,x}}, count}
+  radix_main{dn, x, n, cycle{steps,tup{aux,x}}, count}
   if (steps % 2) set{x, aux, n}
 }
 
-def radix_grade_inplace{x:pT, xa:pT, g:pI, ga:pI, n:U, count:pC} = {
+def radix_grade_inplace{dn, x:pT, xa:pT, g:pI, ga:pI, n:U, count:pC} = {
   def steps = getsteps{x}
   def c{...p, s} = cycle{steps, p}
   def dsts = flip{tup{
     shiftleft{c{x,xa}, 'sink'}, # Start at xa; ignore last
     reverse  {c{g,ga}}          # End at g
   }}
-  radix_main{tup{x,scaltype{pI}~~0}, n, dsts, count}
+  radix_main{dn, tup{x,scaltype{pI}~~0}, n, dsts, count}
 }
 
 # Radix sorting works even for a count one larger than the type maximum:
@@ -101,19 +104,19 @@ def radix_grade_inplace{x:pT, xa:pT, g:pI, ga:pI, n:U, count:pC} = {
 def radix_fits{n, T & isint{T} & ~issigned{T}} = n <= 1<<width{T}
 
 # Radix sort on arbitrary types
-def radix{x:pT, n:U, aux0} = {
+def radix{dn, x:pT, n:U, aux0} = {
   def T = eltype{pT}; def aux = *T~~aux0
   count := aux+n
-  def rad{C} = radix_inplace{x, n, aux, *C~~count}
+  def rad{C} = radix_inplace{dn, x, n, aux, *C~~count}
   index_options{rad, n, radix_fits, tup{u8, u32}}
 }
 
 # Sort 32-bit data with a 16-bit range
 # In place except the counts in aux
-radpack32(dst:*u32, src:*u32, n:u32, aux:*void, min:u32) : void = {
+radpack32{dn}(dst:*u32, src:*u32, n:u32, aux:*void, min:u32) : void = {
   x16 := *u16 ~~ dst
   @for (x16, src over n) x16 = u16<~(src - min)
-  def rad{C} = radix_inplace{x16, n, x16 + n, *C~~aux}
+  def rad{C} = radix_inplace{dn, x16, n, x16 + n, *C~~aux}
   index_options{rad, n, radix_fits, tup{u8, u32}}
   @for_backwards (x16, dst over n) dst = min + u32^~x16
 }

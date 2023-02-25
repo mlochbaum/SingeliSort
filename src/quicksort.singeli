@@ -24,7 +24,7 @@ def base_cases{dn, dst:*T, src:*T, aux:*T, n:U, aux_bytes:U, min:T} = {
       return{}
     }
     if (width{T} == 32 and n <= (1<<16) and range < (1<<16)) {
-      radpack32(*u32~~dst, *u32~~src, u32<~n, *void~~aux, u32~~min)
+      radpack32{dn}(*u32~~dst, *u32~~src, u32<~n, *void~~aux, u32~~min)
       return{}
     }
   }
