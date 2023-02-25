@@ -42,8 +42,9 @@ def radix_main{src, n:U, dsts, count:pC} = {
   def counts_off = where_signed{T, {c}=>c+128, counts}
   # Count frequency of all bytes simultaneously
   def keys = keyfns{steps, T}
-  radix_counts{single{src}, n, counts_off, keys}
+  radix_counts{single{src}, n, counts_off + 1, keys}
   # Exclusive sum of each count array (interleaved for speed)
+  slice{counts, 1} <- 0
   prefix_sum_excl{counts, count_len, issigned{scaltype{src}}}
   # And do the radix sorting through the successive dsts
   def srcs = shiftright{tup{src}, dsts}

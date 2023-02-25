@@ -62,9 +62,8 @@ def prefix_sum_excl = {
     def sum = each{{_:pT}=>{s:eltype{pT}=0}, ptrs}
     # Do the sums
     @for (x in ptrs over len) {
-      def prev = clone{sum}
       sum += x
-      x = prev
+      x = sum
     }
   }
 
@@ -80,10 +79,9 @@ def prefix_sum_excl = {
     # Sum registers initialized to 0
     def sum = each{{_}=>{s:usize=0}, ptrs}
     # Length of the loop
-    @for (x in pwords over len * wc / ww) {
-      def prev = clone{sum}
-      prefix_word{wc, ww, sum, x}
-      x = prev | sum<<wc
+    @for (xw in pwords over len * wc / ww) {
+      prefix_word{wc, ww, sum, xw}
+      xw = sum
       sum >>= ww-wc
     }
   }
