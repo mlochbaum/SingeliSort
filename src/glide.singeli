@@ -72,7 +72,7 @@ glide_sort{dn, T, min_run, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : voi
       r = min_run
     }
     if (eager) {
-      piposort{dn, T}(x, r, *T~~aux)
+      pisort{dn, T}(x, x, r, *T~~aux)
       s = SORTED
     }
     setlabel{done}

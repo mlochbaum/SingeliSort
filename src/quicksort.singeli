@@ -140,7 +140,7 @@ flux_loop{dn, T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8) :
 
 flux_sort_with_run{dn, T}(x:*T, n:U, aux:*void, aux_bytes:U, desc:u1, l:U) : void = {
   if (n <= 192) {
-    piposort{dn, T}(x, n, *T~~aux)
+    pisort{dn, T}(x, x, n, *T~~aux)
     return{}
   }
 

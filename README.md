@@ -12,7 +12,7 @@ Singeli sort currently hybridizes the following algorithms; all are used for `gl
 
 - Quicksort partitioning from [fluxsort](https://github.com/scandum/fluxsort) and [crumsort](https://github.com/scandum/crumsort)
 - Outer merge layer: [glidesort](https://github.com/orlp/glidesort) (powersort rules made lazy to defer to quicksort when possible)
-- Merging: [piposort](https://github.com/scandum/piposort)
+- Merging: based on [piposort](https://github.com/scandum/piposort)
 - Small-array sorting: [quadsort](https://github.com/scandum/quadsort)
 - Radix sort: mostly like [ska_sort_copy](https://github.com/skarupke/ska_sort)
 - Counting sort: see [section](https://github.com/mlochbaum/rhsort#counting-sort) in rhsort

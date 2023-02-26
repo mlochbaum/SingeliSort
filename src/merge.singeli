@@ -114,44 +114,7 @@ def merge_from{dn, x:pT, n:U, aux:pT, block} = {
   if (src != x) set{x, src, n}
 }
 
-# A simple bottom-down and not-very-adaptive merge sort using
-# branchless merges in sets of 4
-piposort{dn, T}(x:*T, n:U, aux:*T) : void = {
-  if (n < 32) {
-    sort_lt32{dn, x, n}
-    return{}
-  }
-  # Approximate halves n = h1+h2 and quarters h1=q1+q2, h2=q3+q4
-  h1 := n / 2;  q1 := h1 / 2; q2 := h1 - q1
-  h2 := n - h1; q3 := h2 / 2; q4 := h2 - q3
-
-  # Sort each quarter
-  def recur = piposort{dn, T}
-  recur(x          , q1, aux)
-  recur(x + q1     , q2, aux)
-  recur(x + h1     , q3, aux)
-  recur(x + h1 + q3, q4, aux)
-
-  # If each boundary between quarters is ordered, we're done
-  def ord{i} = x->(i-1) <= x->i
-  if (ord{q1} and ord{h1} and ord{h1 + q3}) return{}
-
-  # Also check for reversed quarters
-  if (x->0 > x->(h1-1) and x->q1 > x->(h1+q3-1) and x->h1 > x->(n-1)) {
-    set{aux, x, h1}
-    set{x,     x + h1 + q3, q4}
-    set{x + q4,     x + h1, q3}
-    set{x + h2,   aux + q1, q2}
-    set{x + h2 + q2,   aux, q1}
-    return{}
-  }
-
-  def merge = parity_merge{dn, T, 1}
-  merge(aux     , x     , q1, h1)
-  merge(aux + h1, x + h1, q3, h2)
-  merge(x       , aux   , h1, n)
-}
-
+# A bottom-down fast but not very adaptive merge sort
 # Requires dst != aux; src may be dst or aux
 pisort{dn, T}(dst:*T, src:*T, n:U, aux:*T) : void = {
   if (n < 32) {
@@ -165,5 +128,9 @@ pisort{dn, T}(dst:*T, src:*T, n:U, aux:*T) : void = {
   recur(aux,      src,      h1, dst)
   recur(aux + h1, src + h1, h2, dst + h1)
 
-  parity_merge{dn, T, 1}(dst, aux, h1, n)
+  if (aux->(h1-1) <={dn} aux->h1) {
+    set{dst, aux, n}
+  } else {
+    parity_merge{dn, T, 1}(dst, aux, h1, n)
+  }
 }
