@@ -27,71 +27,67 @@ def parity_merge_const{dn, n, dst, src} = {
   @for_const (i to h) parity_neg{dn, left, right, dstc, i}
 }
 
-# Merge halves of array
-# Requires half == n/2
-parity_merge{dn, T, handle_odd}(dst:*T, src:*T, half:U, n:U) : void = {
-  lpos := src           ; rpos := src + half ; dpos := dst
-  lneg := src + half - 1; rneg := src + n - 1; dneg := dst + n - 1
+# Branchless merge, combining lengths left and n-left from src to dst
+# Not in-place: dst can't overlap src
+# With guard==0, must have left*2 == n
+# With guard==1,           left == n/2 (n can be odd)
+# With guard==2, any lengths handled
+parity_merge{dn, T, guard}(dst:*T, src:*T, left:U, n:U) : void = {
+  def handle_any = guard >= 2
+  def handle_odd = guard >= 1
 
-  if (handle_odd and n%2) {
-    parity_pos{dn, lpos, rpos, dpos, 0}
-    ++rpos; ++dpos
-  }
-  @for_unroll{2} (i to n/2) {
-    parity_pos{dn, lpos, rpos, dpos, i}
-    parity_neg{dn, lneg, rneg, dneg, i}
-  }
-}
-
-# Guarded parity merge that works on any combination of lengths
-parity_merge_any{dn, T}(dst:*T, src:*T, left:U, n:U) : void = {
   right := n - left
-  half := n/2
-
   lpos := src     ; rpos := src + left  ; dpos := dst
   lneg := rpos - 1; rneg := lneg + right; dneg := dst + n - 1
 
-  # Suppose there are k "inside" elements on the long side that will
-  # merge before the last one on the left
-  # Then it's safe to perform short+k merges in that direction: only
-  # the last can finish the short side, so nothing reads past it
-  # To satisfy n/2 <= short+k, we have n <= 2*(short+k) + 1
-  # That is, we can safely merge 2*k + short + 1 from the long side
-  # So r->i < ll clears us to merge up to index 2*(i+1) + short
-  # On the other hand, if r->i >= ll, it's safe to cut off i and past
-  # The next index we check should be short + 2*i + 3
-  def cut_either{short,shneg,shpos, long,loneg,lopos, cmp} = {
-    def cut{v, outside, do_cut} = {
-      if (RARE{outside{v,e}}) {
-        i := short
-        while (i < e) {
-          if (outside{v,i}) e = i
-          else i = 2*i + short + 3
+  half := left
+  if (handle_any) {
+    half = n/2
+
+    # Suppose there are k "inside" elements on the long side that will
+    # merge before the last one on the left
+    # Then it's safe to perform short+k merges in that direction: only
+    # the last can finish the short side, so nothing reads past it
+    # To satisfy n/2 <= short+k, we have n <= 2*(short+k) + 1
+    # That is, we can safely merge 2*k + short + 1 from the long side
+    # So r->i < ll clears us to merge up to index 2*(i+1) + short
+    # On the other hand, if r->i >= ll, it's safe to cut off i and past
+    # The next index we check should be short + 2*i + 3
+    def cut_either{short,shneg,shpos, long,loneg,lopos, cmp} = {
+      def cut{v, outside, do_cut} = {
+        if (RARE{outside{v,e}}) {
+          i := short
+          while (i < e) {
+            if (outside{v,i}) e = i
+            else i = 2*i + short + 3
+          }
+          do_cut{long - e}
+          n = short + e
+          half = n/2
         }
-        do_cut{long - e}
-        n = short + e
-        half = n/2
       }
+      def setneg{len} = { loneg-=len; dneg-=len; set{dneg+1, loneg+1, len} }
+      def setpos{len} = { set{dpos, lopos, len}; lopos+=len; dpos+=len }
+      e := half - short - 1
+      cut{*shneg, {v,i}=>{ cmp{v, lopos->i   }}, setneg}
+      cut{*shpos, {v,i}=>{~cmp{v, loneg->(-i)}}, setpos}
     }
-    def setneg{len} = { loneg-=len; dneg-=len; set{dneg+1, loneg+1, len} }
-    def setpos{len} = { set{dpos, lopos, len}; lopos+=len; dpos+=len }
-    e := half - short - 1
-    cut{*shneg, {v,i}=>{ cmp{v, lopos->i   }}, setneg}
-    cut{*shpos, {v,i}=>{~cmp{v, loneg->(-i)}}, setpos}
+    if      (left  < half) cut_either{left, lneg,lpos, right,rneg,rpos, <={dn}}
+    else if (right < half) cut_either{right,rneg,rpos, left, lneg,lpos, < {dn}}
   }
-  if      (left  < half) cut_either{left, lneg,lpos, right,rneg,rpos, <={dn}}
-  else if (right < half) cut_either{right,rneg,rpos, left, lneg,lpos, < {dn}}
 
   @for_unroll{2} (i to half) {
     parity_pos{dn, lpos, rpos, dpos, i}
     parity_neg{dn, lneg, rneg, dneg, i}
   }
-  if (n%2) {
+  if (handle_odd and n%2) {
     l := lpos->0; r := rpos->half
     if (lpos > lneg-half) l = r
     dpos <-{half} l
   }
 }
+
+def parity_merge_any{dn, T} = parity_merge{dn, T, 2}
 
 # Merge arrays of length l and n-l starting at a, using buffer aux
 # Can be done without moving both sides, but this way's easy
