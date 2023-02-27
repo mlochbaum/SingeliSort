@@ -35,7 +35,7 @@ def drape_sort{sort}{x:pT, n:U, aux:pT} = {
         }
         if (j > keep or x->(keep-j) <= v) { # Drop left
           d := x + (keep-j+1) # Drop from here and replace with x+i
-          @for (j) { --highs; aux <-{highs} d->0; d <- x->i; ++i; ++d }
+          @for (d over j) { --highs; aux <-{highs} d; d = x->i; ++i }
           goto{done}
         }
         vp = vj
@@ -45,30 +45,33 @@ def drape_sort{sort}{x:pT, n:U, aux:pT} = {
     }
   }
 
-  j := keep + 1  # Number of kept values
-  # Values past j are no longer needed, so use them as aux space
-  sort{aux,       lows,    x+j}
-  reverse{aux+highs, n-highs}  # For stability
-  sort{aux+highs, n-highs, x+j}
+  # Sort values and merge back into x
+  def merge_back{old_end, new_end, drops, drop_len, rev, cmp} = {
+    # For stability, reverse and sort instead of sorting down
+    if (rev) reverse{drops, drop_len}
+    # Values past j are no longer needed, so use them as aux space
+    sort{drops, drop_len, x + old_end}
 
-  def merge_back{old_end, new_end, first_drop, last_drop, cmp} = {
+    # Now merge
     j := old_end; i := new_end
     # Guarding index j below takes time, so stop before it's needed
-    stop := first_drop
-    while (stop<last_drop and cmp{aux->stop, x->0}) ++stop
+    stop:U = 0
+    while (stop<drop_len and cmp{drops->stop, x->0}) ++stop
     # Main loop
-    @for_backwards (d in aux from stop to last_drop) {
+    @for_backwards (d in drops from stop to drop_len) {
       v:=undefined{T}; jn:=undefined{U}
       while (cmp{d, (v = x->(jn=j-1))}) { --i; x <-{i} v; j=jn }
       --i; x <-{i} d
     }
     # Take care of the part that couldn't be guarded
-    if (stop > first_drop) {
+    if (stop > 0) {
       while (j>0) { --j; --i; x <-{i} x->j }
-      set{x, aux+first_drop, stop-first_drop}
+      set{x, drops, stop}
     }
   }
 
-  merge_back{j, n-lows, highs, n, <=}
-  merge_back{n-lows, n, U~~0, lows, <}
+  j := keep + 1   # Number of kept values
+  jh := n - lows  # Plus high values once those are merged
+  if (j < jh)   merge_back{j, jh, aux+highs, n-highs, 1, <=}
+  if (lows > 0) merge_back{jh, n, aux,       lows,    0, <}
 }
