@@ -120,8 +120,11 @@ def drape_sort{sort}{x:pT, n:U, aux:pT} = {
       while (cmp{d, (v = x->(jn=j-1))}) { --i; x <-{i} v; j=jn }
       --i; x <-{i} d
     }
-    # Values before stop need to go at the beginning
-    set{x, aux+first_drop, stop-first_drop}
+    # Take care of the part that couldn't be guarded
+    if (stop > first_drop) {
+      while (j>0) { --j; --i; x <-{i} x->j }
+      set{x, aux+first_drop, stop-first_drop}
+    }
   }
 
   merge_back{j, n-lows, highs, n, <=}
