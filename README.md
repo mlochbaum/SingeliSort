@@ -21,7 +21,7 @@ Singeli sort currently hybridizes the following algorithms; all are used for `gl
 Methods implemented but not yet used:
 
 - Small-array sorting networks as in [ipn_unstable](https://github.com/Voultapher/sort-research-rs/blob/main/src/unstable/rust_ipn.rs)
-- [Drop-Merge sort](https://github.com/emilk/drop-merge-sort)
+- Drapesort, similar to [drop-Merge sort](https://github.com/emilk/drop-merge-sort)
 
 Other methods to consider later:
 
