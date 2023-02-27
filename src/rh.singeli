@@ -155,7 +155,7 @@ def try_rh{dn, dst:pT, src:pT, n:U, aux:pT, aux_bytes:U, minv, maxv} = {
     if (dst != src) set{dst, src, n} # Finally we commit and clear up aux
     aux
   }
-  r:U = dist{U, minv, maxv}
+  r:U = dist{dn}{U, minv, maxv}
   rh_main{dn, alloc, {pos}=>1}{dst, n, minv, maxv, r}
   
   return{}
