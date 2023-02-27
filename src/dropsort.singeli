@@ -9,7 +9,7 @@
 # Each time it finds an inversion, it either drops incoming values to
 # the too-low list or previously accepted values to the too-high list.
 
-def drape_sort{sort}{x:pT, n:U, aux:pT} = {
+def drape_sort{dn, sort}{x:pT, n:U, aux:pT} = {
   def T = eltype{pT}
 
   lows:U = 0          # Number of low values dropped
@@ -19,7 +19,7 @@ def drape_sort{sort}{x:pT, n:U, aux:pT} = {
   while (i < n) {
     v := x->i         # Read next value
     u := x->keep      # Latest kept value
-    if (u <= v) {     # In order?
+    if (u <={dn} v) { # In order?
       ++i; ++keep; x <-{keep} v
     } else {
       # Drop on left or right?
@@ -29,11 +29,11 @@ def drape_sort{sort}{x:pT, n:U, aux:pT} = {
       def done = makelabel{}
       while (1) {
         vj := undefined{T}
-        if (j == n-i or u <= (vj = x->(i+j)) or vp > vj) { # Drop right
+        if (j == n-i or u <={dn} (vj = x->(i+j)) or vp >{dn} vj) { # Drop right
           @for (j) { aux <-{lows} x->i; ++i; ++lows }
           goto{done}
         }
-        if (j > keep or x->(keep-j) <= v) { # Drop left
+        if (j > keep or x->(keep-j) <={dn} v) { # Drop left
           d := x + (keep-j+1) # Drop from here and replace with x+i
           @for (d over j) { --highs; aux <-{highs} d; d = x->i; ++i }
           goto{done}
@@ -72,6 +72,6 @@ def drape_sort{sort}{x:pT, n:U, aux:pT} = {
 
   j := keep + 1   # Number of kept values
   jh := n - lows  # Plus high values once those are merged
-  if (j < jh)   merge_back{j, jh, aux+highs, n-highs, 1, <=}
-  if (lows > 0) merge_back{jh, n, aux,       lows,    0, <}
+  if (j < jh)   merge_back{j, jh, aux+highs, n-highs, 1, <={dn}}
+  if (lows > 0) merge_back{jh, n, aux,       lows,    0, < {dn}}
 }
