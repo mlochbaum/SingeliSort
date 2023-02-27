@@ -101,14 +101,18 @@ def radix_grade_inplace{dn, x:pT, xa:pT, g:pI, ga:pI, n:U, count:pC} = {
 # the count array can overflow, but after taking an exclusive sum it
 # only affects portions after the last element (that is, target indices
 # can't overflow)
-def radix_fits{n, T & isint{T} & ~issigned{T}} = n <= 1<<width{T}
+def radix_fits{dn}{n, T & isint{T} & ~issigned{T}} = {
+  # But the descending SWAR code in radix_prefix_sum fails at that length
+  def adjust = (if (dn and width{T}<=16) 1; else 0)
+  n <= 1<<width{T} - adjust
+}
 
 # Radix sort on arbitrary types
 def radix{dn, x:pT, n:U, aux0} = {
   def T = eltype{pT}; def aux = *T~~aux0
   count := aux+n
   def rad{C} = radix_inplace{dn, x, n, aux, *C~~count}
-  index_options{rad, n, radix_fits, tup{u8, u32}}
+  index_options{rad, n, radix_fits{dn}, tup{u8, u32}}
 }
 
 # Sort 32-bit data with a 16-bit range
@@ -117,6 +121,6 @@ radpack32{dn}(dst:*u32, src:*u32, n:u32, aux:*void, min:u32) : void = {
   x16 := *u16 ~~ dst
   @for (x16, src over n) x16 = u16<~(src - min)
   def rad{C} = radix_inplace{dn, x16, n, x16 + n, *C~~aux}
-  index_options{rad, n, radix_fits, tup{u8, u32}}
+  index_options{rad, n, radix_fits{dn}, tup{u8, u32}}
   @for_backwards (x16, dst over n) dst = min + u32^~x16
 }

@@ -15,7 +15,7 @@ include './glide'
 sort8{dn, T}(x:*T, n:U, aux:*void) : void = {
   if (n < 16) {
     sort_lt32{dn, x, n, 16}
-  } else if (radix_fits{n,u8}) {
+  } else if (radix_fits{dn}{n,u8}) {
     radix_inplace{dn, x, n, *T~~aux, *u8~~(aux+n)}
   } else {
     count_sort{dn, x, n, aux}
