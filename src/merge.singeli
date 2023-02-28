@@ -43,41 +43,7 @@ parity_merge{dn, T, guard}(dst:*T, src:*T, left:U, n:U) : void = {
   half := left
   if (handle_any) {
     half = n/2
-    # Suppose there are k "inside" elements on the long side that will
-    # merge before the last one on the left
-    # Then it's safe to perform short+k merges in that direction: only
-    # the last can finish the short side, so nothing reads past it
-    # To satisfy n/2 <= short+k, we have n <= 2*(short+k) + 1
-    # That is, we can safely merge 2*k + short + 1 from the long side
-    # So r->i < ll clears us to merge up to index 2*(i+1) + short
-    # On the other hand, if r->i >= ll, it's safe to cut off i and past
-    # The next index we check should be short + 2*i + 3
-    def cut_sides{short,shneg,shpos, long,loneg,lopos, cmp} = {
-      def cut{v, outside, do_cut} = {
-        if (RARE{outside{v,e}}) {
-          i := short
-          while (i < e and not outside{v,i}) {
-            i = 2*i + short + 3
-            if (i >= e) i = e
-          }
-          do_cut{long - i}; long = i
-          n = short + long
-          half = n/2
-          e = half - short - 1
-        }
-      }
-      def setneg{len} = { loneg-=len; dneg-=len; set{dneg+1, loneg+1, len} }
-      def setpos{len} = { set{dpos, lopos, len}; lopos+=len; dpos+=len }
-      e := half - short - 1
-      n0 := n
-      do {
-        n0 = n
-        cut{*shneg, {v,i}=>{ cmp{v, lopos->i   }}, setneg}
-        cut{*shpos, {v,i}=>{~cmp{v, loneg->(-i)}}, setpos}
-      } while (n != n0)
-    }
-    if      (left  < half) cut_sides{left, lneg,lpos, right,rneg,rpos, <={dn}}
-    else if (right < half) cut_sides{right,rneg,rpos, left, lneg,lpos, < {dn}}
+    parity_cuts{dn, n,dneg,dpos, half, tup{left,lneg,lpos}, tup{right,rneg,rpos}}
   }
 
   @for_unroll{2} (i to half) {
@@ -118,12 +84,12 @@ def parity_cuts{dn, n,dneg,dpos, half, ldata, rdata} = {
     def setneg{len} = { loneg-=len; dneg-=len; set{dneg+1, loneg+1, len} }
     def setpos{len} = { set{dpos, lopos, len}; lopos+=len; dpos+=len }
     e := half - short - 1
-n0 := n
-do {
-n0 = n
-    cut{bind{{v,i}=>{ cmp{v, lopos->i   }}, *shneg}, setneg}
-    cut{bind{{v,i}=>{~cmp{v, loneg->(-i)}}, *shpos}, setpos}
-} while (n != n0)
+    n0 := n
+    do {
+      n0 = n
+      cut{bind{{v,i}=>{ cmp{v, lopos->i   }}, *shneg}, setneg}
+      cut{bind{{v,i}=>{~cmp{v, loneg->(-i)}}, *shpos}, setpos}
+    } while (n != n0)
   }
   if      (tupsel{0,ldata} < half) cut_sides{...ldata, ...rdata, <={dn}}
   else if (tupsel{0,rdata} < half) cut_sides{...rdata, ...ldata, < {dn}}
