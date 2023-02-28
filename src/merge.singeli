@@ -54,23 +54,25 @@ parity_merge{dn, T, guard}(dst:*T, src:*T, left:U, n:U) : void = {
     # On the other hand, if r->i >= ll, it's safe to cut off i and past
     # The next index we check should be short + 2*i + 3
     def cut_either{short,shneg,shpos, long,loneg,lopos, cmp} = {
-      def cut{v, outside, do_cut} = {
+      def cut{v, outside, do_cut, next} = {
         if (RARE{outside{v,e}}) {
           i := short
-          while (i < e) {
-            if (outside{v,i}) e = i
-            else i = 2*i + short + 3
+          while (i < e and not outside{v,i}) {
+            i = 2*i + short + 3
+            if (i >= e) i = e
           }
-          do_cut{long - e}
-          n = short + e
+          do_cut{long - i}
+          n = short + i
           half = n/2
+        } else {
+          next{}
         }
       }
       def setneg{len} = { loneg-=len; dneg-=len; set{dneg+1, loneg+1, len} }
       def setpos{len} = { set{dpos, lopos, len}; lopos+=len; dpos+=len }
       e := half - short - 1
-      cut{*shneg, {v,i}=>{ cmp{v, lopos->i   }}, setneg}
-      cut{*shpos, {v,i}=>{~cmp{v, loneg->(-i)}}, setpos}
+      cut{      *shneg, {v,i}=>{ cmp{v, lopos->i   }}, setneg,
+        {}=>cut{*shpos, {v,i}=>{~cmp{v, loneg->(-i)}}, setpos, {}=>0}}
     }
     if      (left  < half) cut_either{left, lneg,lpos, right,rneg,rpos, <={dn}}
     else if (right < half) cut_either{right,rneg,rpos, left, lneg,lpos, < {dn}}
