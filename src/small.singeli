@@ -7,6 +7,8 @@
 # These methods are mostly branchless, with some shortcuts that make
 # them adapt slightly to already-sorted data
 
+local include './network'
+
 # Sort exactly 2 elements branchlessly
 def sort_2{dn, dst, src} = {
   c := src >*{dn} src+1
@@ -72,8 +74,9 @@ def sort_16_parity = sort_8_16_parity{
 }
 
 def sort_lt32{dn, dst, src, n:U, max} = {
-  def use{l, sort} = {
-    sort{dn, dst, src}
+  def un = can_use_unstable{src} & isint{scaltype{src}}
+  def use{l, sort_un, sort_stable} = {
+    (if (un) sort_un; else sort_stable){dn, dst, src}
     def cpy{dst,src} = {
       if (isid{src} or (not dst===src and dst!=src)) {
         @for (dst,src over _ from l to n) dst=src
@@ -83,9 +86,9 @@ def sort_lt32{dn, dst, src, n:U, max} = {
     insertion_finish{dn, dst, dst, l, n}
   }
   if      (max <=  4 or n <  4) sort_lt4{dn, dst, src, n}
-  else if (max <=  8 or n <  8) use{ 4, sort_4_quad}
-  else if (max <= 16 or n < 16) use{ 8, sort_8_parity}
-  else                          use{16, sort_16_parity}
+  else if (max <=  8 or n <  8) use{ 4, network_sort_4,  sort_4_quad}
+  else if (max <= 16 or n < 16) use{ 8, network_sort_8,  sort_8_parity}
+  else                          use{16, network_sort_16, sort_16_parity}
 }
 def sort_lt32{dn, dst, src, n:U} = sort_lt32{dn, dst, src, n, 32}
 def sort_lt32{dn, ptr, n:U, max & knum{max}} = sort_lt32{dn, ptr, ptr, n, max}

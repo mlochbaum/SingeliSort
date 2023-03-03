@@ -19,6 +19,9 @@ def tptr{T} = 'pointer'===typekind{T}
 local def first{t} = tupsel{0,t}
 def single{x} = (if (ktup{x}) first{x}; else x)
 
+def can_use_unstable{x} = 1
+def can_use_unstable{x & ktup{x}} = 1 == tuplen{x}
+
 def swap{a, b} = { t:=a; a=b; b=t }
 def swap{a:T, b:T & tptr{T}} = { t := *a; a <- *b; b <- t }
 
