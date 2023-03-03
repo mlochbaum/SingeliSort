@@ -87,9 +87,9 @@ def radix_inplace{dn, x:pT, n:U, aux:pT, count:pC} = {
   if (steps % 2) set{x, aux, n}
 }
 
-def radix_grade_inplace{dn, x:pT, xa:pT, g:pI, ga:pI, n:U, count:pC} = {
+def radix_grade_inplace{dn, x:pT, xa, g:pI, ga, n:U, count:pC} = {
   def steps = getsteps{x}
-  def c{...p, s} = cycle{steps, p}
+  def c{...p} = cycle{steps, p}
   def dsts = flip{tup{
     shiftleft{c{x,xa}, 'sink'}, # Start at xa; ignore last
     reverse  {c{g,ga}}          # End at g

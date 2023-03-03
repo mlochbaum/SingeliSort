@@ -34,13 +34,17 @@ sort16{dn, T}(x:*T, n:U, aux:*void) : void = {
 }
 
 # Reasonable for both 1-byte and 2-byte inputs
-grade8_16{dn, T,I}(x:*T, g:*I, n:U, aux:*void) : void = {
+grade8_16{dn, T,I}(g:*I, x:*T, n:U, aux:*void) : void = {
   if (n < 16) {
     sort_lt32{dn, tup{x,g}, tup{x,I~~0}, n, 16}
+  } else if (width{T} == 8) {
+    # Bucket sort; final x isn't needed and initial g is implicit
+    radix_grade_inplace{dn, x, 0, g, 0, n, *U~~aux}
   } else {
-    # Bucket sort; second copies of x and g are unused swap space,
-    # as final x isn't needed and initial g is implicit
-    radix_grade_inplace{dn, x, x, g, g, n, *U~~aux}
+    xa := *T~~aux
+    ga := *I~~(xa+n)
+    aa := *U~~(ga+n)
+    radix_grade_inplace{dn, x, xa, g, ga, n, aa}
   }
 }
 
