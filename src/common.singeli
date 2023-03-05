@@ -14,7 +14,7 @@ def reverse{x:T, n & tptr{T}} = {
 
 def filter_neq{dst, src, len, v} = {
   d:=dst; l:=len
-  s1:=src-1; while (s1->l == v) --l
+  s1:=src-1; while (l > 0 and s1->l == v) --l
   @for_unroll{8} (src over i to l) {
     d <- src; d += v != src  # Branchless update
   }

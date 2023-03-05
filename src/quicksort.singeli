@@ -93,8 +93,13 @@ def flux_recur{dn, recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_byte
   if (l > most) {
     # Partition again with pivots on the right
     # This bounds performance by O(k*n) for only k unique values
-    l = flux_partition{dst, <{dn}, piv, dst, aux+r, m}
-    set{dst+l, aux+r, m-l} # Should probably write a reverse partition to avoid this
+    if (can_use_unstable{dst}) {
+      l = filter_neq{dst, dst, m, piv} - dst
+      set{dst+l, piv, m-l}
+    } else {
+      l = flux_partition{dst, <{dn}, piv, dst, aux+r, m}
+      set{dst+l, aux+r, m-l} # Should probably write a reverse partition to avoid this
+    }
   }
 
   # Sort the right-hand side, moving it from rsrc to dst
