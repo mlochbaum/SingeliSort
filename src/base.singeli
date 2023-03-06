@@ -13,6 +13,7 @@ oper <-> swap        infix none  20
 oper >*  ptr_gt      infix none  20
 oper *?  lazy_load   prefix      60
 oper *?  lazy_load   infix right 50
+oper *+  pnt_each    prefix      60
 
 def tptr{T} = 'pointer'===typekind{T}
 
@@ -71,6 +72,8 @@ extend ({...f}=>each{ecmp,f,tupsel{dn_ind,f}}){
   __eq, __ne, __lt, __gt, __le, __ge,
   ptr_gt, ptr_lt
 }
+
+def pnt_each{...T} = eachrec{__pnt, ...T}
 
 # ++{1} is -- and +={1} is -=
 def __incr{dn==0} = __incr

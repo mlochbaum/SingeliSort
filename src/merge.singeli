@@ -32,11 +32,12 @@ def parity_merge_const{dn, n, dst, src} = {
 # With guard==0, must have left*2 == n
 # With guard==1,           left == n/2 (n can be odd)
 # With guard==2, any lengths handled
-parity_merge{dn, T, guard}(dst:*T, src:*T, left:U, n:U) : void = {
+def parity_merge_any{dn, T} = parity_merge{dn, T, 2}
+parity_merge{dn, T, guard}(dst:*+T, src:*+T, left:U, n:U) : void = {
   parity_merge{dn, guard, dst, src, left, n}
 }
-parity_merge{dn, T, I, guard}(dv:*T, di:*I, sv:*T, si:*I, left:U, n:U) : void = {
-  parity_merge{dn, guard, tup{dv,di}, tup{sv,si}, left, n}
+def parity_merge_fn{dn, guard, dst, src, left, n} = {
+  parity_merge{dn, eachrec{scaltype,dst}, guard}(dst, src, left, n)
 }
 def parity_merge{dn, guard, dst, src, left:U, n:U} = {
   def handle_any = guard >= 2
@@ -101,12 +102,6 @@ def parity_cuts{dn, n,dneg,dpos, half, ldata, rdata} = {
   else if (tupsel{0,rdata} < half) cut_sides{...rdata, ...ldata, < {dn}}
 }
 
-def parity_merge_any{dn, T} = parity_merge{dn, T, 2}
-def parity_merge_fn{dn, guard, dst, src, left, n} = {
-  if (not ktup{dst}) parity_merge{dn, scaltype{dst}, guard}(dst, src, left, n)
-  else parity_merge{dn, ...each{scaltype,dst}, guard}(...dst, ...src, left, n)
-}
-
 # Merge arrays of length l and n-l starting at a, using buffer aux
 # Can be done without moving both sides, but this way's easy
 def merge_pair{dn, x:pT, left:U, n:U, aux:pT} = {
@@ -134,12 +129,8 @@ def merge_from{dn, x:pT, n:U, aux:pT, block} = {
 
 # A bottom-down fast but not very adaptive merge sort
 # Requires dst != aux; src may be dst or aux
-pisort{dn, T}(dst:*T, src:*T, n:U, aux:*T) : void = {
+pisort{dn, T}(dst:*+T, src:*+T, n:U, aux:*T) : void = {
   pisort{dn, bind{call, pisort{dn,T}}, dst, src, n, aux}
-}
-pisort{dn, T, I}(dv:*T, di:*I, sv:*T, si:I, n:U, av:*T, ai:*I) : void = {
-  def recur{d, s, n, a} = pisort{dn,T,I}(...d, ...s, n, ...a)
-  pisort{dn, recur, tup{dv,di}, tup{sv,si}, n, tup{av,ai}}
 }
 def pisort{dn, recur, dst, src, n:U, aux} = {
   if (n < 32) {
@@ -159,9 +150,13 @@ def pisort{dn, recur, dst, src, n:U, aux} = {
   }
 }
 
+# Allow index part of src to be just a base index
+pisort{dn, T, I}(dst:tup{*T,*I}, src:tup{*T,I}, n:U, aux:tup{*T,*I}) : void = {
+  pisort{dn, bind{call, pisort{dn,T,I}}, dst, src, n, aux}
+}
 pigrade{dn, T, I}(dst:*I, src:*T, n:U, aux:*void) : void = {
   ai := *I~~aux
   dv := *T~~(ai + n)
   av := dv + n
-  pisort{dn, T, I}(dv, dst, src, 0, n, av, ai)
+  pisort{dn, T, I}(tup{dv, dst}, tup{src, 0}, n, tup{av, ai})
 }
