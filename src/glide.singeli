@@ -54,21 +54,34 @@ glide_sort{dn, T, min_run, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
   #   ~0 if sorted (length is also viable but this is easier)
   def SORTED = (1 << width{U}) - 1
 
-  # Run of length at most r starting at x
+  # "Run" of length at most r starting at x
   # Modify r to give the length of the run, and return its sortedness
+  # Always searches until a natural run of length >=min_run is found
+  # This coalesces unsorted runs, never returning two in a row
+  saved_run:U = 0
   def new_run{x, r:U} = {
     s:U = 0
-    if (r >= min_run) {
-      def desc_len = find_run{dn, x, r}
-      desc:u1 = tupsel{0,desc_len}  # Run is descending
-      l:U     = tupsel{1,desc_len}  # Run length
-
-      if (l >= min_run) {
-        if (desc) reverse{x, l}
+    if (saved_run > 0) {
+      r = saved_run; s = SORTED
+      saved_run = 0
+    } else {
+      i := -(U~~min_run)     # Run start
+      l    := undefined{U}   # Run length
+      desc := undefined{u1}  # Run is descending
+      def no_run = makelabel{}
+      do {
+        i += min_run
+        if (r-i < min_run) goto{no_run}
+        tup{desc,l} = find_run{dn, x+i, r}
+      } while (l < min_run)
+      # Should trace beginning of run here too
+      if (desc) reverse{x+i, l}
+      if (i == 0) {
         r = l; s = SORTED
       } else {
-        r = min_run
+        saved_run = l; r = i
       }
+      setlabel{no_run}
     }
     s
   }
@@ -86,13 +99,14 @@ glide_sort{dn, T, min_run, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
       sr = 0
     } else {
       s_min := sl; if (sr < s_min) s_min = sr
-      if (s_min == 0) { # One unsorted: sort any unsorted halves
-        if (sr == 0) { base_sort{xr, nr}; sr = SORTED; s_min = sl }
-        if (sl == 0) { base_sort{xp, nl}; sl = SORTED; s_min = sr }
+      if (s_min == 0) { # One unsorted
+        # Sort the unsorted half if it's under two thirds of total size
+        if (sr == 0 and nl > nr/2) { base_sort{xr, nr}; sr = SORTED; s_min = sl }
+        if (sl == 0 and nr > nl/2) { base_sort{xp, nl}; sl = SORTED; s_min = sr }
       }
       if (s_min == SORTED) { # Both sorted, now split-sorted
         sr = nl
-      } else {
+      } else if (s_min > 0) {
         if      (sr == SORTED) merge_3{xp, sl, nl-sl, nr}
         else if (sl == SORTED) merge_3{xp, nl,        sr, nr-sr}
         else                   merge_4{xp, sl, nl-sl, sr, nr-sr}
