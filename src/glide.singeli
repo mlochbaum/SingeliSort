@@ -39,7 +39,7 @@ def powersort_init{ns} = {
   }
 }
 
-glide_sort{dn, T, min_run, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
+glide_sort{dn, T, min_run, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
 
   def base_sort{x, n} = sort{x, n, aux, *u8~~stack - *u8~~aux}
   def merge_2{x, l, r}       = merge_pair{dn, x, l, l+r, *T~~aux}
@@ -58,7 +58,6 @@ glide_sort{dn, T, min_run, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : voi
   # Modify r to give the length of the run, and return its sortedness
   def new_run{x, r:U} = {
     s:U = 0
-    def done = makelabel{}
     if (r >= min_run) {
       def desc_len = find_run{dn, x, r}
       desc:u1 = tupsel{0,desc_len}  # Run is descending
@@ -67,15 +66,10 @@ glide_sort{dn, T, min_run, eager, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : voi
       if (l >= min_run) {
         if (desc) reverse{x, l}
         r = l; s = SORTED
-        goto{done}
+      } else {
+        r = min_run
       }
-      r = min_run
     }
-    if (eager) {
-      pisort{dn, T}(x, x, r, *T~~aux)
-      s = SORTED
-    }
-    setlabel{done}
     s
   }
 
