@@ -4,6 +4,9 @@ include './prefix'
 def map{op, a, b, n} = @for (a over n) op{a,b}
 def map{op, a, b:T, n & tptr{T}} = @for (a, b over n) op{a,b}
 
+def map{op, a, b, n & ktup{a}          } = each{{i  }=>map{op,i,b,n}, a}
+def map{op, a, b, n & ktup{a} & ktup{b}} = each{{i,j}=>map{op,i,j,n}, a, b}
+
 # memset/memcpy
 def set = bind{map, {a,b} => {a=b}}
 
@@ -14,9 +17,9 @@ def reverse{x:T, n & tptr{T}} = {
 
 def filter_neq{dst, src, len, v} = {
   d:=dst; l:=len
-  s1:=src-1; while (l > 0 and s1->l == v) --l
+  s1:= >src-1; while (l > 0 and s1->l == v) --l
   @for_unroll{8} (src over i to l) {
-    d <- src; d += v != src  # Branchless update
+    d <- src; d += v != >src  # Branchless update
   }
   d
 }

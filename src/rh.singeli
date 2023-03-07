@@ -11,8 +11,8 @@ def thresh_init = 2*BLOCK
 
 # Main Robin Hood insertion algorithm
 # Fill and empty the buffer. Doesn't include merges.
-def rh_insert{dn, x:*T, len:U, buf:*T, buflen, pos, empty:T} = {
-  set{buf, empty, buflen}
+def rh_insert{dn, x, len:U, buf, buflen, pos, empty:T} = {
+  set{>buf, empty, buflen}
 
   # Stolen blocks go to xb
   xb := x
@@ -21,8 +21,8 @@ def rh_insert{dn, x:*T, len:U, buf:*T, buflen, pos, empty:T} = {
   # Main loop: insert array entries into buffer
   @for (x over i from 0 to len) {
     j:U = pos{x}
-    h:T = buf->j
-    if (LIKELY{h==empty}) {
+    def h = buf*?j
+    if (LIKELY{>h==empty}) {
       # Easy insert
       buf <-{j} x
     } else {
@@ -39,15 +39,16 @@ def rh_insert{dn, x:*T, len:U, buf:*T, buflen, pos, empty:T} = {
   # Move all values from the buffer back to the array
   xt := filter_neq{xb, buf, buflen, empty}
   # Recover sentinel elements based on total count
-  set{xt, empty, (x+len)-xt}
+  if (can_use_unstable{xt}) set{xt, empty, (x+len)-xt}
 
   xb
 }
 
 # Insert an element val to buf at init (cur := buf->init)
 # Return the location after the last value moved
-def insertval{dn, init:U, val:T, cur:T, buf:*T, empty:T} = {
+def insertval{dn, init:U, val, h, buf, empty:T} = {
   ins:=init; end:=init
+  cur := get{h}
   # Reposition elements after val branchlessly during the search
   do {
     ++end; n := buf->end   # Might write over this
@@ -55,19 +56,19 @@ def insertval{dn, init:U, val:T, cur:T, buf:*T, empty:T} = {
     buf <-{end-c} cur      # Reposition cur
     ins += c               # Increments until val's final location found
     cur = n
-  } while (cur!=empty)     # Until the end of the chain
+  } while (>cur != empty)  # Until the end of the chain
   buf <-{ins} val
   1+end   # Account for just-inserted val
 }
 
-def stealblocks{start:U, end:U, buf:*T, dst:*T, pos, empty:T} = {
+def stealblocks{start:U, end:U, buf, dst, pos, empty:T} = {
   def j = start
   # Find the beginning of the chain (required for stability)
-  while ((j>0) & (buf->(j-1)!=empty)) --j
+  while (j>0 and >buf->(j-1)!=empty) --j
   # Move as many blocks from it as possible
   hj := buf+j; hf := buf+end
   while (hj <= hf-BLOCK) {
-    @for (hj, dst over BLOCK) { dst = hj; hj = empty }
+    @for (hj, dst over BLOCK) { dst = hj; >hj = empty }
     hj += BLOCK; dst += BLOCK
   }
   # Leftover elements might have to move backwards
@@ -84,7 +85,7 @@ def stealblocks{start:U, end:U, buf:*T, dst:*T, pos, empty:T} = {
 def getposfn{dn, minv, n:U, r} = {
   sh:U = 0                              # Contract to fit range
   while (r>5*n) { ++sh; r=r>>1 }        # Shrink to stay at O(n) memory
-  {v} => dist{dn}{U,minv,v} >> sh
+  {v} => dist{dn}{U,minv,>v} >> sh
 }
 
 # Statistical check of samples to make sure it's not too clumpy
@@ -107,7 +108,7 @@ def checkdist{dn, sample, num:U, minv:T, n:U, r} = {
   checkdist{dn, sample, num, pos}
 }
 
-def rh_main{dn, alloc, check}{x:*T, n:U, minv:T, maxv, r} = {
+def rh_main{dn, alloc, check}{x, n:U, minv:T, maxv, r} = {
   def pos = getposfn{dn, minv, n, r}
 
   # Goes down to BLOCK once we know we have to merge
@@ -121,7 +122,7 @@ def rh_main{dn, alloc, check}{x:*T, n:U, minv:T, maxv, r} = {
   xb := rh_insert{dn, x, n, aux, sz, pos, empty}
 
   # Merge stolen blocks back in if necessary
-  l:U = U<~(xb-x)   # Size of those blocks
+  l:U = U<~(>xb - >x)   # Size of those blocks
   if (l > 0) {
     # Sort x[0..l]
     merge_from{dn, x, l, aux, BLOCK}

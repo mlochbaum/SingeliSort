@@ -14,6 +14,7 @@ oper >*  ptr_gt      infix none  20
 oper *?  lazy_load   prefix      60
 oper *?  lazy_load   infix right 50
 oper *+  pnt_each    prefix      60
+oper >   single      prefix      80
 
 def tptr{T} = 'pointer'===typekind{T}
 
