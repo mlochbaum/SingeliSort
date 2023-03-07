@@ -151,3 +151,12 @@ glide_sort{dn, T, min_run, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
   while (has_stack{}) merge_p{}
   sort_run{x, np, sp}
 }
+
+glide_sort{dn, T}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
+  if (n < 16) {
+    sort_lt32{dn, x, n, 16}
+  } else {
+    def flux{...a} = flux_sort{dn, T}(...a)
+    glide_sort{dn, T, 256, flux}(x, n, aux, aux_bytes)
+  }
+}

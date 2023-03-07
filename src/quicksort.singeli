@@ -143,38 +143,26 @@ flux_loop{dn, T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8) :
   }
 }
 
-flux_sort_with_run{dn, T}(x:*T, n:U, aux:*void, aux_bytes:U, desc:u1, l:U) : void = {
+flux_sort{dn, T}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
   if (n <= 192) {
     pisort{dn, T}(x, x, n, *T~~aux)
     return{}
   }
 
   # Find the minimum value and index of last maximum
-  def block = 128
-  runs:U = l/block  # Number of block-length runs found
-  i := l
-  imax:U = l; if (desc) imax = 1  # One past index of maximum
-  min := x->(l-imax); max := x->(imax-1)
+  def block = 1024
+  min := x->0; max := min
+  i:U = 0; imax := i
   do {
     i0 := i
     i += block; if (i > n) i = n
     blm := x->i0
-    cmp:primtype{'u',width{T}} = 0
-    @for (v in x over j from i0 to i) {
-      cmp += v >={dn} x->(j-1)
-      if (v <{dn} min) min=v
-      if (v >{dn} blm) blm=v
+    @for (x over j from i0 to i) {
+      if (x <{dn} min) min=x
+      if (x >{dn} blm) blm=x
     }
-    runs += ((i-i0)-U^~cmp == block) | (cmp == block)
     if (blm >={dn} max) { max=blm; imax=i; } # Save block index; refine later
   } while (i < n)
-
-  # Pass l=1 to indicate glide_sort shouldn't be used again
-  if (l > 1 and runs > n / (block*4)) {
-    def flux{...args} = flux_sort_with_run{dn, T}(...args, 0, 1)
-    glide_sort{dn, T, 64, flux}(x, n, aux, aux_bytes)
-    return{}
-  }
 
   do { --imax } while (x->imax <{dn} max)
   x <-{imax} x->(n-1)  # (unstable)
@@ -182,23 +170,4 @@ flux_sort_with_run{dn, T}(x:*T, n:U, aux:*void, aux_bytes:U, desc:u1, l:U) : voi
 
   # Now sort
   flux_loop{dn, T}(x, x, *T~~aux, n-1, aux_bytes, min, 0)
-}
-
-flux_sort{dn, T}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
-  # Fast path
-  if (n < 4) {
-    sort_lt4{dn, x, x, n}
-    return{}
-  }
-
-  # Follow first run
-  def desc_len = find_run{dn, x, n}
-  desc:u1 = tupsel{0,desc_len}  # Run is descending
-  l:U     = tupsel{1,desc_len}  # Run length
-
-  if (l == n) {
-    if (desc) reverse{x, l}
-    return{}
-  }
-  flux_sort_with_run{dn, T}(x, n, aux, aux_bytes, desc, l)
 }
