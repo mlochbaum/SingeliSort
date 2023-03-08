@@ -8,7 +8,7 @@ Compile with:
 
 There's also a pre-compiled copy of sort.c in `compiled/sort.c`. It may not be kept up to date.
 
-Singeli sort currently hybridizes the following algorithms; all are used for `glide32` and other functions use subsets. The overall structure is that the glidesort layer may call quicksort, which calls the different base cases in various situations.
+Singeli sort currently hybridizes the following algorithms; all are used for `sort32` and other functions use subsets. The overall structure is that the glidesort layer may call quicksort, which calls the different base cases in various situations.
 
 - Quicksort partitioning from [fluxsort](https://github.com/scandum/fluxsort) and [crumsort](https://github.com/scandum/crumsort)
 - Outer merge layer: [glidesort](https://github.com/orlp/glidesort) (powersort rules made lazy to defer to quicksort when possible)
