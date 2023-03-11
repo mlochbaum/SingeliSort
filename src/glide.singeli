@@ -15,7 +15,7 @@ def quad_merge{dn, x:pT, a, b, c, d, aux:pT} = {
   merge_into{dn, x,     aux, l, l+r}  # Combine
 }
 # Merge of 3, as a function since it's used twice
-triple_merge{dn, T}(x:*T, l:U, m:U, r:U, aux:*T) : void = {
+fn triple_merge{dn, T}(x:*T, l:U, m:U, r:U, aux:*T) : void = {
   if (l < r) {
     h := l + m
     merge_into{dn, aux, x, l, h}      # Left
@@ -39,7 +39,7 @@ def powersort_init{ns} = {
   }
 }
 
-glide_sort{dn, T, min_run, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
+fn glide_sort{dn, T, min_run, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
 
   def base_sort{x, n} = sort{x, n, aux, *u8~~stack - *u8~~aux}
   def merge_2{x, l, r}       = merge_pair{dn, x, l, l+r, *T~~aux}
@@ -160,7 +160,7 @@ glide_sort{dn, T, min_run, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
   sort_run{x, np, sp}
 }
 
-glide_sort{dn, T}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
+fn glide_sort{dn, T}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
   if (n < 16) {
     sort_lt32{dn, x, n, 16}
   } else {

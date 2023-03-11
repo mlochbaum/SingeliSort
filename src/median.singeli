@@ -26,10 +26,10 @@ def locate_median{src:pT, inds} = {
   }
   tupsel{l-1, inds}
 }
-locate_median_3{T,U}(src:*T, i0:U, i1:U, i2:U) : U = {
+fn locate_median_3{T,U}(src:*T, i0:U, i1:U, i2:U) : U = {
   locate_median{src, tup{i0,i1,i2}}
 }
-locate_median_5{T,U}(src:*T, i0:U, i1:U, i2:U, i3:U, i4:U) : U = {
+fn locate_median_5{T,U}(src:*T, i0:U, i1:U, i2:U, i3:U, i4:U) : U = {
   locate_median{src, tup{i0,i1,i2,i3,i4}}
 }
 def median_from{medfn}{array:pT, U} = {

@@ -120,7 +120,7 @@ def flux_recur{dn, recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_byte
   n = l
 }
 
-flux_loop{dn, T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8) : void = {
+fn flux_loop{dn, T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8) : void = {
   while (u1~~1) {
     base_cases{dn, dst, src, aux, n, aux_bytes, min}
 
@@ -143,7 +143,7 @@ flux_loop{dn, T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8) :
   }
 }
 
-flux_sort{dn, T}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
+fn flux_sort{dn, T}(x:*T, n:U, aux:*void, aux_bytes:U) : void = {
   if (n <= 192) {
     pisort{dn, T}(x, x, n, *T~~aux)
     return{}

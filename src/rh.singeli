@@ -133,7 +133,7 @@ def rh_main{dn, alloc, check}{x, n:U, minv:T, maxv, r} = {
 
 # Sort array of ints with length n.
 # Assume there's enough aux space.
-rh_sort{dn, T, range}(x:*T, n:U, aux:*T) : void = {
+fn rh_sort{dn, T, range}(x:*T, n:U, aux:*T) : void = {
   # Find the range.
   def mm=range{dn, x, n}; minv:=tupsel{0,mm}; maxv:=tupsel{1,mm}
   r:U = dist{dn}{U, minv, maxv}        # Size of range

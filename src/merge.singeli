@@ -33,7 +33,7 @@ def parity_merge_const{dn, n, dst, src} = {
 # With guard==1,           left == n/2 (n can be odd)
 # With guard==2, any lengths handled
 def parity_merge_any{dn, T} = parity_merge{dn, T, 2}
-parity_merge{dn, T, guard}(dst:*+T, src:*+T, left:U, n:U) : void = {
+fn parity_merge{dn, T, guard}(dst:*+T, src:*+T, left:U, n:U) : void = {
   parity_merge{dn, guard, dst, src, left, n}
 }
 def parity_merge_fn{dn, guard, dst, src, left, n} = {
@@ -128,7 +128,7 @@ def merge_from{dn, x, n:U, aux, block} = {
 
 # A bottom-down fast but not very adaptive merge sort
 # Requires dst != aux; src may be dst or aux
-pisort{dn, T}(dst:*+T, src:*+T, n:U, aux:*T) : void = {
+fn pisort{dn, T}(dst:*+T, src:*+T, n:U, aux:*T) : void = {
   pisort{dn, bind{call, pisort{dn,T}}, dst, src, n, aux}
 }
 def pisort{dn, recur, dst, src, n:U, aux} = {
@@ -150,10 +150,10 @@ def pisort{dn, recur, dst, src, n:U, aux} = {
 }
 
 # Allow index part of src to be just a base index
-pisort{dn, T, I}(dst:tup{*T,*I}, src:tup{*T,I}, n:U, aux:tup{*T,*I}) : void = {
+fn pisort{dn, T, I}(dst:tup{*T,*I}, src:tup{*T,I}, n:U, aux:tup{*T,*I}) : void = {
   pisort{dn, bind{call, pisort{dn,T,I}}, dst, src, n, aux}
 }
-pigrade{dn, T, I}(dst:*I, src:*T, n:U, aux:*void) : void = {
+fn pigrade{dn, T, I}(dst:*I, src:*T, n:U, aux:*void) : void = {
   ai := *I~~aux
   dv := *T~~(ai + n)
   av := dv + n
