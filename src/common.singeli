@@ -56,6 +56,6 @@ def find_run{dn, x, n:U} = {
   def follow_run{cmp} = {
     while (l < n and cmp{x->(l-1), x->l}) ++l
   }
-  if (not desc) follow_run{<={dn}}; else follow_run{>{dn}}
+  if (not desc) follow_run{<={dn}} else follow_run{>{dn}}
   tup{desc, l}
 }

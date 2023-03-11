@@ -19,7 +19,7 @@ oper >   single      prefix      80
 def tptr{T} = 'pointer'===typekind{T}
 
 local def first{t} = tupsel{0,t}
-def single{x} = (if (ktup{x}) first{x}; else x)
+def single{x} = if (ktup{x}) first{x} else x
 
 def can_use_unstable{x} = 1
 def can_use_unstable{x & ktup{x}} = 1 == tuplen{x}
@@ -38,7 +38,7 @@ def bytes{t & ktyp{t}} = width{t} / 8
 # Change to unsigned: here we always subtract smaller from greater
 def __sub{a:P,b:P & tptr{P}}  = emit{usize, 'op -', a, b}
 
-def addtype{a:T} = { if (tptr{T}) usize; else T }
+def addtype{a:T} = if (tptr{T}) usize else T
 def __add{a, b:u1} = __add{a, addtype{a}^~b}
 def __sub{a, b:u1} = __sub{a, addtype{a}^~b}
 
@@ -85,7 +85,7 @@ def __sub{dn==0} = __sub
 def __sub{dn==1}{a,b} = b-a
 
 def type{s & ktup{s}} = type{first{s}}
-def scaltype{T} = (if (tptr{T}) scaltype{eltype{T}}; else T)
+def scaltype{T} = if (tptr{T}) scaltype{eltype{T}} else T
 def scaltype{x & ~ktyp{x}} = scaltype{type{x}}
 
 def isid{ptr} = ~tptr{type{ptr}}
@@ -101,7 +101,7 @@ def lazy_load{p,i} = {
     def pr = slice{p,1}
     merge{
       tup{s},
-      (if (ktup{i}) each{ll, pr, slice{i,1}}; else each{{p}=>ll{p,i},pr})
+      if (ktup{i}) each{ll, pr, slice{i,1}} else each{{p}=>ll{p,i},pr}
     }
   }
 }

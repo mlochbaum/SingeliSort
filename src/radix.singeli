@@ -61,7 +61,7 @@ def radix_counts{dn, x, n, counts, keys} = {
   # Rather than take an exclusive prefix sum in the ascending case, we
   # write counts at an offset of 1. The descending case subtracts
   # cumulative counts from n, so they should be inclusive with no offset
-  def counts_shift = (if (not dn) counts + 1; else counts)
+  def counts_shift = if (not dn) counts + 1 else counts
   @for (x over n) {
     def incr{c, k} = incrp{c + k{x}}
     each{incr, counts_shift, keys}
@@ -103,7 +103,7 @@ def radix_grade_inplace{dn, x:pT, xa, g:pI, ga, n:U, count:pC} = {
 # can't overflow)
 def radix_fits{dn}{n, T & isint{T} & ~issigned{T}} = {
   # But the descending SWAR code in radix_prefix_sum fails at that length
-  def adjust = (if (dn and width{T}<=16) 1; else 0)
+  def adjust = if (dn and width{T}<=16) 1 else 0
   n <= 1<<width{T} - adjust
 }
 

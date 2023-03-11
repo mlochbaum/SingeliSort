@@ -138,7 +138,7 @@ fn rh_sort{dn, T, range}(x:*T, n:U, aux:*T) : void = {
   def mm=range{dn, x, n}; minv:=tupsel{0,mm}; maxv:=tupsel{1,mm}
   r:U = dist{dn}{U, minv, maxv}        # Size of range
   if (r/4 < n) {
-    count_sort{dn, x, n, *U~~aux, (if (not dn) minv; else maxv), r+1}
+    count_sort{dn, x, n, *U~~aux, if (not dn) minv else maxv, r+1}
   } else {
     rh_main{dn, {sz}=>aux, {pos}=>1}{x, n, minv, maxv, r}
   }

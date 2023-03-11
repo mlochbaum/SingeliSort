@@ -8,7 +8,7 @@ local {
 # Values in x must be registers: the sum is done in place
 def prefix_word{wi, ww, x} = {
   # Shift amounts, e.g. tup{8, 16, 32}
-  def shifts{w} = { if (w<ww) merge{w, shifts{2*w}}; else tup{} }
+  def shifts{w} = if (w<ww) merge{w, shifts{2*w}} else tup{}
   # Add each of these in succession, interleaving if x is a tuple
   each{{k} => {x += x<<k}, shifts{wi}}
 }
@@ -54,12 +54,12 @@ def prefix_sum{dn}{x:*T, len, init:T} = {
   } else {
     sum := U^~primtype{'u',we}~~init
     # Adjust for signed overflow and descending with xor
-    def fixsum = { if (not (issigned{T} or dn)) { {s}=>s } else {
+    def fixsum = if (not (issigned{T} or dn)) { {s}=>s } else {
       def off = (1<<(width{T}-1)) - dn
       sum ^= off
       xor:U = off; prefix_word{we, width{U}, xor}
       {s} => xor ^ s
-    } }
+    }
     # Full words
     lenq := ps_words{x, len, sum, fixsum}
     # Last partial word
@@ -73,12 +73,12 @@ def radix_prefix_sum{dn, n, ptrs, len & ktup{ptrs}} = {
   if (not dn) slice{ptrs, 1} <- 0
   def sum{S,v} = each{{_}=>{s:S=S<~v}, ptrs}
   if (width{T} > 16) {
-    psf{dn, for}{ptrs, len, sum{T,(if (not dn) 0; else n)}}
+    psf{dn, for}{ptrs, len, sum{T, if (not dn) 0 else n}}
   } else {
-    def fixsum = { if (not dn) { {s}=>s } else {
+    def fixsum = if (not dn) { {s}=>s } else {
       nw:U = U^~n; prefix_word{width{T}, width{U}, nw}
       {s} => nw - s
-    } }
+    }
     ps_words{ptrs, len, sum{U,0}, fixsum}
   }
 }

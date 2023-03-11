@@ -76,7 +76,7 @@ def sort_16_parity = sort_8_16_parity{
 def sort_lt32{dn, dst, src, n:U, max} = {
   def un = can_use_unstable{src} & isint{scaltype{src}}
   def use{l, sort_un, sort_stable} = {
-    (if (un) sort_un; else sort_stable){dn, dst, src}
+    (if (un) sort_un else sort_stable){dn, dst, src}
     def cpy{dst,src} = {
       if (isid{src} or (not dst===src and dst!=src)) {
         @for (dst,src over _ from l to n) dst=src

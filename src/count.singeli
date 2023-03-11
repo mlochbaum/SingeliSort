@@ -13,8 +13,8 @@ def count_fill{dn, x, n, count, min:T, range:U} = {
   # Count the values
   do_count{x, n, count, min, 0}
   # Write based on the counts
-  dst := x; v := (if (not dn) min; else min + T<~(range-1))
-  def for_dn = (if (not dn) for; else for_backwards)
+  dst := x; v := if (not dn) min else min + T<~(range-1)
+  def for_dn = if (not dn) for else for_backwards
   @for_dn (count over range) {
     set{dst, v, count}; dst += count; ++{dn}v
   }
@@ -25,10 +25,10 @@ def count_sum{dn, x, n, count, min:T, range:U} = {
   do_count{x, n, count, min, 1}
 
   # Write differences to x
-  j:U = (if (not dn) 0; else range-1) # Index in count
-  r := undefined{U}                   # Running total
-  while ((r=count->j) == 0) ++{dn}j   # Skip leading 0 counts quickly
-  x0 := min + T<~j                    # First result
+  j:U = if (not dn) 0 else range-1   # Index in count
+  r := undefined{U}                  # Running total
+  while ((r=count->j) == 0) ++{dn}j  # Skip leading 0 counts quickly
+  x0 := min + T<~j                   # First result
   while (r < n) { incrp{x+r}; ++{dn}j; r += count->j }
 
   prefix_sum{dn}{x, n, x0}
@@ -48,6 +48,6 @@ def count_sort{dn, x:*T, n:U, aux:*U, min:T, range:U} = {
 def count_sort{dn, x:pT, n:U, aux} = {
   def T = eltype{pT}
   def range = 1<<width{T}
-  def min = { if (issigned{T}) -range/2; else 0 }
+  def min = if (issigned{T}) -range/2 else 0
   count_sort{dn, x, n, *U~~aux, T~~min, U~~range}
 }
