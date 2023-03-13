@@ -33,8 +33,8 @@ fn locate_median_5{T,U}(src:*T, i0:U, i1:U, i2:U, i3:U, i4:U) : U = {
   locate_median{src, tup{i0,i1,i2,i3,i4}}
 }
 def median_from{medfn}{array:pT, U} = {
-  def fn = medfn{eltype{pT},U}
-  {...inds} => fn(array, ...inds)
+  def fun = medfn{eltype{pT},U}
+  {...inds} => fun(array, ...inds)
 }
 def median3_from = median_from{locate_median_3}
 def median5_from = median_from{locate_median_5}

@@ -15,10 +15,10 @@ def count_len  = 1<<radix_bits
 # Number of steps required
 def getsteps{x} = width{scaltype{x}} / radix_bits
 
-# Apply fn to the last component of the list if T is signed
-def where_signed{T, fn, list} = {
+# Apply f to the last component of the list if T is signed
+def where_signed{T, f, list} = {
   if (not issigned{T}) list
-  else merge{slice{list, 0, -1}, tup{fn{tupsel{-1, list}}}}
+  else merge{slice{list, 0, -1}, tup{f{tupsel{-1, list}}}}
 }
 
 # Given a tuple, get corresponding key generators: bytes starting from
