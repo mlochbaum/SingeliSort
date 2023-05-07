@@ -46,13 +46,14 @@ def locate_3_median{array:pT, n:U} = {
 }
 
 def locate_3of3_pseudomedian{array:pT, n:U} = {
-  h := n / 2
-  q := n / 4
+  q1 := n / 4
+  q2 := n / 2
+  q3 := n - q1
   def med = median3_from{array, U}
   med{
-    med{  1, q  , h  },  # 125
-    med{  0, h-1, n-1},  # 048
-    med{h+1, h+q, n-2}   # 367
+    med{q1-1, q2-1, q3  },  # 136
+    med{ 0  , q2  , q3+1},  # 048
+    med{q1  , q2+1, n -1}   # 257
   }
 }
 
