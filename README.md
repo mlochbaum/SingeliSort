@@ -6,21 +6,20 @@ Compile with:
 
     $ singeli src/sort.singeli -o sort.c && gcc -O3 bench.c
 
-There's also a pre-compiled copy of sort.c in `compiled/sort.c`. It may not be kept up to date.
+There's also a pre-compiled copy of sort.c in `compiled/sort.c`. It may not always be up to date.
 
 Singeli sort currently hybridizes the following algorithms; all are used for `sort32` and other functions use subsets. The overall structure is that the glidesort layer may call quicksort, which calls the different base cases in various situations.
 
 - Quicksort partitioning from [fluxsort](https://github.com/scandum/fluxsort) and [crumsort](https://github.com/scandum/crumsort)
-- Outer merge layer: [glidesort](https://github.com/orlp/glidesort) (powersort rules made lazy to defer to quicksort when possible)
+- Outer merge layer: modified [glidesort](https://github.com/orlp/glidesort) ([powersort](https://github.com/sebawild/powersort) rules made lazy to defer to quicksort if runs aren't found)
 - Merging: based on [piposort](https://github.com/scandum/piposort)
-- Small-array sorting: [quadsort](https://github.com/scandum/quadsort)
+- Small arrays: sorting networks as in [ipn_unstable](https://github.com/Voultapher/sort-research-rs/blob/main/src/unstable/rust_ipn.rs), extra merging and insertion following [quadsort](https://github.com/scandum/quadsort)
 - Radix sort: mostly like [ska_sort_copy](https://github.com/skarupke/ska_sort)
 - Counting sort: see [section](https://github.com/mlochbaum/rhsort#counting-sort) in rhsort
 - [Robin Hood](https://github.com/mlochbaum/rhsort) sort
 
-Methods implemented but not yet used:
+In progress, still has various issues:
 
-- Small-array sorting networks as in [ipn_unstable](https://github.com/Voultapher/sort-research-rs/blob/main/src/unstable/rust_ipn.rs)
 - Drapesort, similar to [drop-Merge sort](https://github.com/emilk/drop-merge-sort)
 
 Other methods to consider later:

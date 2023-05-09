@@ -2,12 +2,20 @@
 
 # Drapesort is inspired by drop-merge sort, which cleans up after this
 # crazy strategy by then sorting the dropped values, and merging them
-# back in. By keeping two drop-lists instead of one, it becomes a stable
-# algorithm, and also makes it so the drop-lists maintain and even
-# improve order in the original data.
+# back in. Keeping two drop-lists instead of one makes it so the
+# drop-lists maintain and even improve order in the original data.
 
 # Each time it finds an inversion, it either drops incoming values to
 # the too-low list or previously accepted values to the too-high list.
+
+# It's usually stable, but the following sequence breaks stability:
+# - Some values initially kept
+# - Later higher values dropped
+# - Enough low values cause the first set of values to be dropped too,
+#   placing them after the higher values
+# I haven't found a fix for this other than to prevent dropping before
+# the last dropped value in each list, which would prevent the method
+# from working on a lot of mostly-ordered lists.
 
 def drape_sort{dn, sort}{x:pT, n:U, aux:pT} = {
   def T = eltype{pT}
