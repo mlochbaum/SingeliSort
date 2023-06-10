@@ -1,3 +1,5 @@
+local include './prefix'
+
 def incrp{p} = p <- p->0 + 1
 def widen{v} = promote{width{*void}, v}
 

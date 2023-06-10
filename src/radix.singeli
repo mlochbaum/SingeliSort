@@ -8,6 +8,8 @@
 
 local {
 
+include './prefix'
+
 # Fix the radix at 1 byte because other widths take too much computation
 def radix_bits = 8
 def count_len  = 1<<radix_bits

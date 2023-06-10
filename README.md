@@ -37,4 +37,39 @@ In progress, still has various issues:
 Other methods to consider later:
 
 - In-place partitioning with [pdqsort](https://github.com/orlp/pdqsort). Slower than crumsort but it does adapt to mostly-sorted data well. Kills patterns.
-- Other glidesort methods: interleaved merges and bidirectional partitioning, small-array sort. These have not yet been demonstrated to improve performance relative to fluxsort, and there are indications that they slow things down on older processors in addition to bumping up code size. I'll wait for the paper explaining choices made before looking into them further.
+- Interleaved merges and bidirectional partitioning from glidesort. These have not yet been demonstrated to improve performance relative to fluxsort, and there are indications that they slow things down on older processors in addition to bumping up code size. I'll wait for the paper explaining choices made before looking into them further.
+
+## Guide to the source
+
+The source code is supposed to be the place to go to get full descriptions and details. I am certain it fails in this role—particularly in places where I don't expect anyone's reading, so please complain if a part you've chosen to read is not well explained!
+
+The general-use files:
+
+- sort.singeli Main file: includes and the sorting function definitions.
+- base.singeli Basic definitions to be used elsewhere. This includes operators, which are all user-defined in Singeli.
+- common.singeli Other definitions that are more specific than base but may be used in multiple places.
+- arith.singeli Some log and square root code to keep it out of the way.
+
+And specific algorithms:
+
+- quicksort.singeli
+  - partition.singeli Partitioning
+  - median.singeli Medians and pseudomedians for picking candidates
+    - xorshift.singeli Pseudo-random number generator (PRNG) avoids patterns
+- merge.singeli Merging utilities and pisort
+- glide.singeli Glidesort strategy: use merges for natural runs
+  - (merge.singeli)
+- small.singeli Small array sorting
+  - network.singeli Sorting networks for some fixed sizes
+  - ins.singeli Insertion sorting
+  - (merge.singeli)
+- radix.singeli Radix sorts
+  - prefix.singeli Prefix sums
+- count.singeli Counting sort
+  - (prefix.singeli)
+- rh.singeli Robin Hood sort, for evenly distributed data
+- dropsort.singeli (unused) Dropsorts for nearly-sorted arrays
+
+Some quick notes on Singeli. Everything in brackets `{}` is run at compile time, so a call like `dist{dn}{U, minv, maxv}` is all inlined (`dist` is called a generator). Functions are called with parentheses and are used rarely, for things that are exported, used in many places, or recursive.
+
+Singeli sort uses a fair amount of compile-time trickery to support lots of sorting functions while keeping the code reasonably clean. Functions all support sorting in both directions (`dn` is `0` for up and `1` for down), and many of them support a sort-by operation that actually passes around a tuple of pointers: one to be sorted and others to be moved in the same pattern. A related operation is "grade", which reorders indices as the data should be ordered, and leaves the data intact (it may partially or completely sort it in aux space). A few funny operators are used to support sort-by: for example `*+T` to turn tuple type `T` into a tuple of pointer types, `*?` to avoid loading from extra pointers until the values are needed, and `>*` to compare pointer values.
