@@ -4,9 +4,21 @@ Algorithms in [Singeli](https://github.com/mlochbaum/Singeli), aiming for high p
 
 Compile with:
 
-    $ singeli src/sort.singeli -o sort.c && gcc -O3 bench.c
+    singeli src/sort.singeli -o sort.c
 
-There's also a pre-compiled copy of sort.c in `compiled/sort.c`. It may not always be up to date.
+Or the following without a Singeli install. CBQN builds on Unix-like systems (including macOS and WSL) in under a minute; see [WinBQN](https://github.com/actalley/WinBQN) for Windows. There's also a pre-compiled copy of sort.c in `compiled/sort.c`. It may not always be up to date.
+
+    git clone https://github.com/dzaima/CBQN.git
+    cd CBQN && make && cd -
+    git clone https://github.com/mlochbaum/Singeli.git
+    CBQN/BQN Singeli/singeli src/sort.singeli -o sort.c
+
+To benchmark:
+
+    gcc -O3 bench.c
+    ./a.out
+
+Exported functions are defined in src/sort.singeli, and their C prototypes appear at the bottom of sort.c. These are likely to change over time.
 
 Singeli sort currently hybridizes the following algorithms; all are used for `sort32` and other functions use subsets. The overall structure is that the glidesort layer may call quicksort, which calls the different base cases in various situations.
 
