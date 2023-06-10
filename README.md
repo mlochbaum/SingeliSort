@@ -2,7 +2,7 @@
 
 Algorithms in [Singeli](https://github.com/mlochbaum/Singeli), aiming for high performance and broad adaptivity for sorting CPU-native types (integers and floats). A secondary goal is a well-commented and readable codebase that explains what various methods are good for and how they're implemented to use hardware to its full potential. Will probably end up using SIMD if available to speed up a few things, but this is primarily intended to be a portable rather than SIMD-first sort.
 
-Compile with:
+Compile with (add `-t cpp` for C++ compatibility):
 
     singeli src/sort.singeli -o sort.c
 

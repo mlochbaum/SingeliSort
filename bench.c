@@ -32,7 +32,7 @@ static U monoclock(void) {
 
 static void sort32_alloc(T *x, U n) {
   U a = (n + 4*(n<1<<16 ? n : 1<<16))*sizeof(T);
-  T *aux = malloc(a);
+  T *aux = (T*)malloc(a);
   sort32(x, n, aux, a);
   free(aux);
 }
@@ -77,9 +77,9 @@ int main(int argc, char **argv) {
   U s=10000; s+=n_iter(s)-1;
 #endif
   s*=sizeof(T);
-  T *data = malloc(s), // Saved random data
-    *sort = malloc(s), // Array to be sorted
-    *chk  = malloc(s); // For checking with qsort
+  T *data = (T*)malloc(s), // Saved random data
+    *sort = (T*)malloc(s), // Array to be sorted
+    *chk  = (T*)malloc(s); // For checking with qsort
   srand(time(NULL));
   for (U k=min, m=0; k<=max; k++) {
     U n = sizes[k];
