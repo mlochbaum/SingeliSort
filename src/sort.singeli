@@ -60,4 +60,5 @@ export{'grade16_64', grade8_16{up, i16, u64}}
 export{'rhsort32', rh_sort{up, i32, findrange}}
 
 export{'sort32',   glide_sort{up, i32}}
+export{'sort64',   glide_sort{up, i64}}
 export{'sort_f64', glide_sort{up, f64}}
