@@ -85,6 +85,7 @@ def parity_cuts{dn, n,dneg,dpos, half, ldata, rdata} = {
         do_cut{long - i}; long = i
         n = short + long
         half = n/2
+        if (short == half) goto{'cut_finish'}
         e = half - short - 1
       }
     }
@@ -100,6 +101,7 @@ def parity_cuts{dn, n,dneg,dpos, half, ldata, rdata} = {
   }
   if      (tupsel{0,ldata} < half) cut_sides{...ldata, ...rdata, <={dn}}
   else if (tupsel{0,rdata} < half) cut_sides{...rdata, ...ldata, < {dn}}
+  setlabel{'cut_finish'}
 }
 
 # Merge arrays of length l and n-l starting at a, using buffer aux
