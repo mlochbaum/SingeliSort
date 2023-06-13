@@ -70,7 +70,7 @@ fn glide_sort{dn, T, min_run, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = 
       desc := undefined{u1}  # Run is descending
       def no_run = makelabel{}
       # Leave runs with many equal elements to quicksort
-      def reject_run{p,l} = { l3 := l/3; p->l3 == p->(l-l3) }
+      def reject_run{p,l} = { f := l/4 + l/16; p->f == p->(l-f) }
       do {
         i += min_run
         if (r-i < min_run) goto{no_run}
