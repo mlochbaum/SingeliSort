@@ -112,9 +112,11 @@ fn glide_sort{dn, T, min_run, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = 
         if (sr == 0 and nl > nr/2) { base_sort{xr, nr}; sr = SORTED; s_min = sl }
         if (sl == 0 and nr > nl/2) { base_sort{xp, nl}; sl = SORTED; s_min = sr }
       }
-      if (s_min == SORTED) { # Both sorted, now split-sorted
+      if (s_min == 0) {
+        sr = 0
+      } else if (s_min == SORTED) { # Both sorted, now split-sorted
         sr = nl
-      } else if (s_min > 0) {
+      } else {
         if      (sr == SORTED) merge_3{xp, sl, nl-sl, nr}
         else if (sl == SORTED) merge_3{xp, nl,        sr, nr-sr}
         else                   merge_4{xp, sl, nl-sl, sr, nr-sr}
