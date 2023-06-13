@@ -72,7 +72,7 @@ fn glide_sort{dn, T, min_run, sort}(x:*T, n:U, aux:*void, aux_bytes:U) : void = 
       do {
         i += min_run
         if (r-i < min_run) goto{no_run}
-        tup{desc,l} = find_run{dn, x+i, r}
+        tup{desc,l} = find_run{dn, x+i, r-i}
       } while (l < min_run)
       # Haven't jumped to no_run, so we have a run
       # Backtrack to find the beginning, and reverse it if descending
