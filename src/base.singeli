@@ -9,7 +9,8 @@ include 'util/tup'  # List utilities: scan and so on
 include 'util/kind' # Kind-test functions like ktup
 def range = iota
 
-oper <-> swap        infix none  20
+oper <~> swap        infix none  20
+oper <-> swap_ptr    infix none  20
 oper >*  ptr_gt      infix none  20
 oper *?  lazy_load   prefix      60
 oper *?  lazy_load   infix right 50
@@ -25,7 +26,7 @@ def can_use_unstable{x} = 1
 def can_use_unstable{x & ktup{x}} = 1 == tuplen{x}
 
 def swap{a, b} = { t:=a; a=b; b=t }
-def swap{a:T, b:T & tptr{T}} = { t := *a; a <- *b; b <- t }
+def swap_ptr{a:T, b:T & tptr{T}} = { t := *a; a <- *b; b <- t }
 
 def __pnt{t & ktup{t}} = __pnt{single{t}}
 def ptr_gt{a,b} = load{a,0} > load{b,0}
