@@ -18,7 +18,9 @@ To benchmark:
     gcc -O3 bench.c
     ./a.out
 
-Exported functions are defined in src/sort.singeli, and their C prototypes appear at the bottom of sort.c. These are likely to change over time.
+Exported functions are defined in src/sort.singeli, and their C prototypes appear at the bottom of sort.c: the arguments for sorts are array, length, aux (or scratch buffer), and possibly aux length in bytes. These are likely to change over time.
+
+## Overview
 
 Singeli sort currently hybridizes the following algorithms; all are used for `sort32` and other functions use subsets. The overall structure is that the glidesort layer may call quicksort, which calls the different base cases in various situations.
 
@@ -36,7 +38,7 @@ In progress, still has various issues:
 
 Other methods to consider later:
 
-- In-place partitioning with [pdqsort](https://github.com/orlp/pdqsort). Slower than crumsort but it does adapt to mostly-sorted data well. Kills patterns.
+- In-place partitioning with [pdqsort](https://github.com/orlp/pdqsort). Slower than crumsort but it does adapt to mostly-sorted data well.
 - Interleaved merges and bidirectional partitioning from glidesort. These have not yet been demonstrated to improve performance relative to fluxsort, and there are indications that they slow things down on older processors in addition to bumping up code size. I'll wait for the paper explaining choices made before looking into them further.
 
 ## Guide to the source
@@ -72,4 +74,26 @@ And specific algorithms:
 
 Some quick notes on Singeli. Everything in brackets `{}` is run at compile time, so a call like `dist{dn}{U, minv, maxv}` is all inlined (`dist` is called a generator). Functions are called with parentheses and are used rarely, for things that are exported, used in many places, or recursive.
 
+All operators are user-defined, with many picked up from standard includes `skin/c` and `skin/cext`. Some of the ones that are unfamiliar relative to C are listed below.
+
+| Syntax      | Meaning
+|-------------|---------
+| `x <{dn} y` | Compare `x` and `y`, flipping ordering if `dn` is `1`
+| `x -> i`    | Value at offset `i` from pointer `x`
+| `x <- v`    | Store `v` at pointer `x`
+| `x <-{i} v` | Store `v` at offset `i` from pointer `x`
+| `x <-> y`   | Swap values at pointers `x` and `y`
+| `a <~> b`   | Swap variables of variables `a` and `b`
+| `T~~v`      | Cast `v` to same-width type `T`
+| `T^~v`      | Promote `v` to supertype `T`
+| `T<~v`      | Narrowing conversion of `v` to type `T`
+
 Singeli sort uses a fair amount of compile-time trickery to support lots of sorting functions while keeping the code reasonably clean. Functions all support sorting in both directions (`dn` is `0` for up and `1` for down), and many of them support a sort-by operation that actually passes around a tuple of pointers: one to be sorted and others to be moved in the same pattern. A related operation is "grade", which reorders indices as the data should be ordered, and leaves the data intact (it may partially or completely sort it in aux space). A few funny operators are used to support sort-by: for example `*+T` to turn tuple type `T` into a tuple of pointer types, `*?` to avoid loading from extra pointers until the values are needed, and `>*` to compare pointer values.
+
+| Syntax       | Meaning
+|--------------|---------
+| `>p`         | Get first pointer only from multi-pointer
+| `p >*{dn} q` | Compare `p` and `q` by value at first pointer
+| `*?p`        | Lazy load at `p`
+| `p *? i`     | Lazy load at offset `i` from `p`
+| `*+T`        | Tuple of pointer types
