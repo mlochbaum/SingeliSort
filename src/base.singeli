@@ -111,38 +111,38 @@ def get{a} = a
 def get{a & kgen{a}} = a{}
 extend perv1{get}
 
-def for{vars,begin,end,block} = {
+def for{vars,begin,end,iter} = {
   def e = usize^~end
   i := usize^~begin
   while (i < e) {
-    exec{i, vars,block}
+    iter{i, vars}
     i += 1
   }
 }
-def for_backwards{vars,begin,end,block} = {
+def for_backwards{vars,begin,end,iter} = {
   i := usize^~end
   def e = usize^~begin
   while (i > e) {
     i -= 1
-    exec{i, vars,block}
+    iter{i, vars}
   }
 }
-def for_const{vars,begin,end,block} = {
+def for_const{vars,begin,end,iter} = {
   if (begin < end) {
-    for_const{vars,begin, end-1, block}
-    exec{end-1, vars,block}
+    for_const{vars,begin, end-1, iter}
+    iter{end-1, vars}
   }
 }
-def for_unroll{unr}{vars,begin,end,block} = {
+def for_unroll{unr}{vars,begin,end,iter} = {
   def e = usize^~end
   i:usize = begin
   eu := e & ~ usize~~(unr-1)
   while (i < eu) {
-    @for_const (j to unr) exec{i+j, vars,block}
+    @for_const (j to unr) iter{i+j, vars}
     i += unr
   }
   while (i < e) {
-    exec{i, vars,block}
+    iter{i, vars}
     i += 1
   }
 }
