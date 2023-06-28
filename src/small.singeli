@@ -21,7 +21,7 @@ def sort_2{dn, ptr} = sort_2{dn, ptr, ptr}
 
 # 0 to 3 elements, could be considered a bubble sort or insertion sort
 def sort_lt4{dn, dst, src, n} = {
-  def mov = ~match{dst,src}
+  def mov = ~is{dst,src}
   if (n > 1) {
     sort_2{dn, dst, src}
     if (n > 2) {
