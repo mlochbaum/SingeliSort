@@ -41,16 +41,43 @@ def parity_merge_fn{dn, guard, dst, src, left, n} = {
 }
 def parity_merge{dn, guard, dst, src, left:U, n:U} = {
   def handle_any = guard >= 2
-  def handle_odd = guard >= 1
+  def handle_odd = guard == 1
 
   right := n - left
   lpos := src     ; rpos := src + left  ; dpos := dst
   lneg := rpos - 1; rneg := lneg + right; dneg := dst + n - 1
 
-  half := left
+  def done = makelabel{}
+  half := if (handle_any) n/2 else left
   if (handle_any) {
-    half = n/2
-    parity_cuts{dn, n,dneg,dpos, half, tup{left,lneg,lpos}, tup{right,rneg,rpos}}
+    def cut_sides{{short,shneg,shpos}, {long,loneg,lopos}, cmp} = {
+      ov := long - short
+      # This is faster, but also needed for correctness of the
+      # following parity merge!
+      if (ov > short) {
+        unbalanced_merge{shpos,short, lopos,long, dpos,n, cmp}
+        goto{done}
+      }
+      # If there are ov "outside" elements on either side of the long
+      # side, move them to get a balanced merge
+      # If not, there are long-ov=short "inside" elements that will
+      # merge before the last one on the short side, so it's safe to
+      # perform short+short>half merges in that direction: only the
+      # last can finish the short side
+      def setneg{} = { loneg-=ov; dneg-=ov; set{dneg+1, loneg+1, ov} }
+      def setpos{} = { set{dpos, lopos, ov}; lopos+=ov; dpos+=ov }
+      if      (RARE{ cmp{* >shneg, >lopos->short   }}) setneg{}
+      else if (RARE{~cmp{* >shpos, >loneg->(-short)}}) setpos{}
+      else goto{nocut}
+      half = short
+    }
+    def nocut = makelabel{}
+    def ldata = tup{left ,lneg,lpos}
+    def rdata = tup{right,rneg,rpos}
+    if      (left  < half) cut_sides{ldata, rdata, <={dn}}
+    else if (right < half) cut_sides{rdata, ldata, < {dn}}
+    n = 2*half
+    setlabel{nocut}
   }
 
   @for_unroll{2} (i to half) {
@@ -62,46 +89,38 @@ def parity_merge{dn, guard, dst, src, left:U, n:U} = {
     if (lpos > lneg-half) l = r
     dpos <-{half} l
   }
+  setlabel{done}
 }
 
-def parity_cuts{dn, n,dneg,dpos, half, ldata, rdata} = {
-  # Suppose there are k "inside" elements on the long side that will
-  # merge before the last one on the left
-  # Then it's safe to perform short+k merges in that direction: only
-  # the last can finish the short side, so nothing reads past it
-  # To satisfy n/2 <= short+k, we have n <= 2*(short+k) + 1
-  # That is, we can safely merge 2*k + short + 1 from the long side
-  # So r->i < ll clears us to merge up to index 2*(i+1) + short
-  # On the other hand, if r->i >= ll, it's safe to cut off i and past
-  # The next index we check should be short + 2*i + 3
-  def cut_sides{short,shneg,shpos, long,loneg,lopos, cmp} = {
-    def cut{outside, do_cut} = {
-      if (RARE{outside{e}}) {
-        i := short
-        while (i < e and not outside{i}) {
-          i = 2*i + short + 3
-          if (i >= e) i = e
-        }
-        do_cut{long - i}; long = i
-        n = short + long
-        half = n/2
-        if (short == half) goto{'cut_finish'}
-        e = half - short - 1
-      }
+def unbalanced_merge{shp, short, lop, long, dst, n, lt} = {
+  # Step size on the long side
+  def K = 8
+  # Main loop must stop after placing element short-1 or long-K
+  i:u64 = 0; j:u64 = 0; k:u64 = 0
+  while (j+K<=long and i<short) {
+    # Merge up to 1 element from the short side and K from long
+    u := shp->i # Next short value to place
+    c:u64 = 0   # Number of elements u passes--its index if <K
+    @for_const (v in lop+j, d in dst+k over K) {
+      c += ~lt{u,v}
+      d = v
     }
-    def setneg{len} = { loneg-=len; dneg-=len; set{dneg+1, loneg+1, len} }
-    def setpos{len} = { set{dpos, lopos, len}; lopos+=len; dpos+=len }
-    e := half - short - 1
-    n0 := n
-    do {
-      n0 = n
-      cut{bind{{v,i}=>{ cmp{v, >lopos->i   }}, * >shneg}, setneg}
-      cut{bind{{v,i}=>{~cmp{v, >loneg->(-i)}}, * >shpos}, setpos}
-    } while (n != n0)
+    k += c; j += c
+    dst <-{k} u
+    a := c<K; i += a; k += a
   }
-  if      (tupsel{0,ldata} < half) cut_sides{...ldata, ...rdata, <={dn}}
-  else if (tupsel{0,rdata} < half) cut_sides{...rdata, ...ldata, < {dn}}
-  setlabel{'cut_finish'}
+  # Finish up with a branchy backwards loop
+  if (i == 0) {
+    u := shp->i
+    while (lt{u, lop->j}) { dst<-{k}lop->j; ++j; ++k }
+    dst <-{k} u; ++i; ++k
+  }
+  i = short-1; j = long-1
+  @for_backwards (d in dst from k to n) {
+    u := shp->i; v := lop->j
+    if (not lt{u,v}) { d = u; --i }
+    else             { d = v; --j }
+  }
 }
 
 # Merge arrays of length l and n-l starting at a, using buffer aux
