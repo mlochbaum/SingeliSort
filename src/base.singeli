@@ -7,7 +7,6 @@ include 'skin/cext'
 
 include 'util/tup'  # List utilities: scan and so on
 include 'util/kind' # Kind-test functions like ktup
-def range = iota
 
 oper <~> swap        infix none  20
 oper <-> swap_ptr    infix none  20
