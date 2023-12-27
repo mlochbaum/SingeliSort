@@ -30,7 +30,7 @@ def sort_lt4{dn, dst, src, n} = {
       sort_2{dn, dst}
     }
   } else if (mov and n == 1) {
-    dst <- *src
+    dst <- src->0
   }
 }
 
