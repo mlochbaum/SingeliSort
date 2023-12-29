@@ -12,8 +12,8 @@ def locate_median{src:pT, inds} = {
   # Only l-1 counters: if median comes last it's found by elimination
   def sums = each{{_}=>{t:u8=0}, range{l-1}}
 
-  def get{i} = src->tupsel{i, inds}
-  def s{i} = tupsel{i, sums}
+  def get{i} = src->select{inds, i}
+  def s{i} = select{sums, i}
 
   @for_const (i from 0 to l-1) {
     vi := get{i}
@@ -22,9 +22,9 @@ def locate_median{src:pT, inds} = {
       s{i} += c
       if (j < l-1) s{j} += ~c
     }
-    if (s{i} == k) return{tupsel{i, inds}}
+    if (s{i} == k) return{select{inds, i}}
   }
-  tupsel{l-1, inds}
+  select{inds, l-1}
 }
 fn locate_median_3{T,U}(src:*T, i0:U, i1:U, i2:U) : U = {
   locate_median{src, tup{i0,i1,i2}}

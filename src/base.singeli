@@ -67,7 +67,7 @@ local def extend ecmp{f,g} = {
   def f{dn==1} = g
 }
 local def dn_ind = tup{0,1, 3,2, 5,4, 7,6}
-extend ({...f}=>each{ecmp,f,tupsel{dn_ind,f}}){
+extend ({...f}=>each{ecmp,f,select{f,dn_ind}}){
   __eq, __ne, __lt, __gt, __le, __ge,
   ptr_gt, ptr_lt
 }
