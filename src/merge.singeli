@@ -150,7 +150,7 @@ def merge_from{dn, x, n:U, aux, block} = {
 # A bottom-down fast but not very adaptive merge sort
 # Requires dst != aux; src may be dst or aux
 fn pisort{dn, T}(dst:*+T, src:*+T, n:U, aux:*T) : void = {
-  pisort{dn, bind{call, pisort{dn,T}}, dst, src, n, aux}
+  pisort{dn, call{pisort{dn,T}, ...}, dst, src, n, aux}
 }
 def pisort{dn, recur, dst, src, n:U, aux} = {
   if (n < 32) {
@@ -164,7 +164,7 @@ def pisort{dn, recur, dst, src, n:U, aux} = {
   recur{aux + h1, src + h1, h2, dst + h1}
 
   if (aux->(h1-1) <={dn} aux->h1) {
-    eachrec{{d,a}=>set{d,a,n}, dst, aux}
+    eachrec{set{., ., n}, dst, aux}
   } else {
     parity_merge_fn{dn, 1, dst, aux, h1, n}
   }
@@ -172,7 +172,7 @@ def pisort{dn, recur, dst, src, n:U, aux} = {
 
 # Allow index part of src to be just a base index
 fn pisort{dn, T, I}(dst:tup{*T,*I}, src:tup{*T,I}, n:U, aux:tup{*T,*I}) : void = {
-  pisort{dn, bind{call, pisort{dn,T,I}}, dst, src, n, aux}
+  pisort{dn, call{pisort{dn,T,I}, ...}, dst, src, n, aux}
 }
 fn pigrade{dn, T, I}(dst:*I, src:*T, n:U, aux:*void) : void = {
   ai := *I~~aux

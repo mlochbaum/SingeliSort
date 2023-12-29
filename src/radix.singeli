@@ -20,7 +20,7 @@ def getsteps{x} = width{scaltype{x}} / radix_bits
 # Apply f to the last component of the list if T is signed
 def where_signed{T, f, list} = {
   if (not issigned{T}) list
-  else merge{slice{list, 0, -1}, tup{f{tupsel{-1, list}}}}
+  else { def {...head, tail} = list; tup{...head, f{tail}} }
 }
 
 # Given a tuple, get corresponding key generators: bytes starting from

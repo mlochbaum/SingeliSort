@@ -3,11 +3,11 @@
 def map{op, a, b, n} = @for (a over n) op{a,b}
 def map{op, a, b:T, n & tptr{T}} = @for (a, b over n) op{a,b}
 
-def map{op, a, b, n & ktup{a}          } = each{{i  }=>map{op,i,b,n}, a}
-def map{op, a, b, n & ktup{a} & ktup{b}} = each{{i,j}=>map{op,i,j,n}, a, b}
+def map{op,     a , {...b}, n} = each{map{op, ., b, n}, a}
+def map{op, {...a}, {...b}, n} = each{map{op, ., ., n}, a, b}
 
 # memset/memcpy
-def set = bind{map, {a,b} => {a=b}}
+def set = map{=, ...}
 
 def reverse{x:T, n & tptr{T}} = {
   xr := x + n-1

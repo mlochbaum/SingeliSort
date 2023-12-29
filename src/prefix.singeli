@@ -34,7 +34,7 @@ def ps_words{x, len, sum, out_fn} = {
   def l = ww / we
   nw:U = len / l
   # Word pointer(s)
-  def xw = eachrec{bind{~~,*U}, x}
+  def xw = eachrec{~~{*U,.}, x}
   @for (xw over nw) {
     prefix_word{we, ww, sum, xw}
     xw = out_fn{sum}
@@ -68,7 +68,7 @@ def prefix_sum{dn}{x:*T, len, init:T} = {
 }
 
 # For radix sort: interleaved sums
-def radix_prefix_sum{dn, n, ptrs, len & ktup{ptrs}} = {
+def radix_prefix_sum{dn, n, {...ptrs}, len} = {
   def T = scaltype{ptrs}
   if (not dn) slice{ptrs, 1} <- 0
   def sum{S,v} = each{{_}=>{s:S=S<~v}, ptrs}

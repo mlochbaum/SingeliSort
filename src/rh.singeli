@@ -135,7 +135,7 @@ def rh_main{dn, alloc, check}{x, n:U, minv:T, maxv, r} = {
 # Assume there's enough aux space.
 fn rh_sort{dn, T, range}(x:*T, n:U, aux:*T) : void = {
   # Find the range.
-  def mm=range{dn, x, n}; minv:=tupsel{0,mm}; maxv:=tupsel{1,mm}
+  {minv, maxv} := range{dn, x, n}
   r:U = dist{dn}{U, minv, maxv}        # Size of range
   if (r/4 < n) {
     count_sort{dn, x, n, *U~~aux, if (not dn) minv else maxv, r+1}

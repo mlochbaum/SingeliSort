@@ -20,7 +20,7 @@ local def order{dn}{dst, src, i, j} = {
 }
 # Perform all swaps
 local def network_sort{i_move, i_inplace}{dn, dst, src} = {
-  def run{s, i} = each{bind{order{dn}, dst, s}, ...flip{i}}
+  def run{s, i} = each{order{dn}{dst, s, ...}, ...flip{i}}
   run{src, i_move}    # First round, move src to dst while swapping
   run{dst, i_inplace} # Now just swap
 }

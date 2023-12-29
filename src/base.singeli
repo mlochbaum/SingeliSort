@@ -18,16 +18,14 @@ oper >   single      prefix      80
 
 def tptr{T} = 'pointer'===typekind{T}
 
-local def first{t} = tupsel{0,t}
-def single{x} = if (ktup{x}) first{x} else x
+def single = match { {{x,..._}}=>x; {x}=>x }
 
-def can_use_unstable{x} = 1
-def can_use_unstable{x & ktup{x}} = 1 == tuplen{x}
+def can_use_unstable{x} = if (ktup{x}) 1 == tuplen{x} else 1
 
 def swap{a, b} = { t:=a; a=b; b=t }
 def swap_ptr{a:T, b:T & tptr{T}} = { t := *a; a <- *b; b <- t }
 
-def __pnt{t & ktup{t}} = __pnt{single{t}}
+def __pnt{{f,...r}} = __pnt{f}
 def ptr_gt{a,b} = load{a,0} > load{b,0}
 def ptr_lt{a,b} = load{a,0} < load{b,0}
 
@@ -64,7 +62,7 @@ extend perv1{__decr}
 def eachrec{fn,...a} = { (extend (perv{tuplen{a}}){fn}){...a} }
 
 local def extend ecmp{f,g} = {
-  def f{a,b & ktup{a} & ktup{b}} = f{first{a},first{b}}
+  def f{{a,..._},{b,..._}} = f{a,b}
   def f{dn==0} = f
   def f{dn==1} = g
 }
@@ -84,7 +82,7 @@ def __incr{dn==1} = __decr
 def __sub{dn==0} = __sub
 def __sub{dn==1}{a,b} = b-a
 
-def type{s & ktup{s}} = type{first{s}}
+def type{{s,..._}} = type{s}
 def scaltype{T} = if (tptr{T}) scaltype{eltype{T}} else T
 def scaltype{x & ~ktyp{x}} = scaltype{type{x}}
 
@@ -101,7 +99,7 @@ def lazy_load{p,i} = {
     def pr = slice{p,1}
     merge{
       tup{s},
-      if (ktup{i}) each{ll, pr, slice{i,1}} else each{{p}=>ll{p,i},pr}
+      if (ktup{i}) each{ll, pr, slice{i,1}} else each{ll{.,i},pr}
     }
   }
 }

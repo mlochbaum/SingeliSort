@@ -132,7 +132,7 @@ fn flux_loop{dn, T}(src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8
         rh_state = 1 + u8^~checkdist{dn, pivots, num, min, n, dist{dn}{U, min, dst->n}}
       }
     }
-    def fun{gen} = bind{call, gen{dn, T}}
+    def fun{gen} = call{gen{dn, T}, ...}
     piv := get_pivot{src, n, getaux, fun{flux_sort}, proc_pivots, rh_state}
     if (isint{T} and rh_state == RH_APPROVED) {
       try_rh{dn, dst, src, n, aux, aux_bytes, min, dst->n}
