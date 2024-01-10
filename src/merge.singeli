@@ -84,7 +84,7 @@ def parity_merge{dn, guard, dst, src, left:U, n:U} = {
     parity_pos{dn, lpos, rpos, dpos, i}
     parity_neg{dn, lneg, rneg, dneg, i}
   }
-  if (handle_odd and n%2) {
+  if (handle_odd and n%2 != 0) {
     l := lpos->0; r := rpos->half
     if (lpos > lneg-half) l = r
     dpos <-{half} l

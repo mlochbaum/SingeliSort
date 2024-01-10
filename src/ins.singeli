@@ -25,7 +25,7 @@ def insertion_finish{dn, dst, src, start, n} = {
       def xi = get{xi}
       if (*?dst >{dn} xi) {
         top := i
-        do { end <- prev->0; --end; --prev } while (--top)
+        do { end <- prev->0; --end; --prev } while (--top != 0)
         end <- xi
       } else {
         do { end <- prev->0; --end; --prev } while (*?prev >{dn} xi)
