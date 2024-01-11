@@ -59,7 +59,7 @@ extend perv2{__or }
 extend perv2{__shl}
 extend perv2{__shr}
 extend perv1{__decr}
-def eachrec{fn,...a} = { (extend (perv{tuplen{a}}){fn}){...a} }
+def eachrec{f,...a} = { (extend (perv{tuplen{a}}){f}){...a} }
 
 local def extend ecmp{f,g} = {
   def f{{a,..._},{b,..._}} = f{a,b}
