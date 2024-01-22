@@ -23,7 +23,7 @@ def single = match { {{x,..._}}=>x; {x}=>x }
 def can_use_unstable{x} = if (ktup{x}) 1 == tuplen{x} else 1
 
 def swap{a, b} = { t:=a; a=b; b=t }
-def swap_ptr{a:T, b:T & tptr{T}} = { t := *a; a <- *b; b <- t }
+def swap_ptr{a:T, b:T if tptr{T}} = { t := *a; a <- *b; b <- t }
 
 def __pnt{{f,...r}} = __pnt{f}
 def ptr_gt{a,b} = load{a,0} > load{b,0}
@@ -31,10 +31,10 @@ def ptr_lt{a,b} = load{a,0} < load{b,0}
 
 def usize = primtype{'u',width{*void}}
 def U = usize
-def bytes{t & ktyp{t}} = width{t} / 8
+def bytes{t if ktyp{t}} = width{t} / 8
 
 # Change to unsigned: here we always subtract smaller from greater
-def __sub{a:P,b:P & tptr{P}}  = emit{usize, 'op -', a, b}
+def __sub{a:P,b:P if tptr{P}}  = emit{usize, 'op -', a, b}
 
 def addtype{a:T} = if (tptr{T}) usize else T
 def __add{a, b:u1} = __add{a, addtype{a}^~b}
@@ -84,10 +84,10 @@ def __sub{dn==1}{a,b} = b-a
 
 def type{{s,..._}} = type{s}
 def scaltype{T} = if (tptr{T}) scaltype{eltype{T}} else T
-def scaltype{x & ~ktyp{x}} = scaltype{type{x}}
+def scaltype{x if not ktyp{x}} = scaltype{type{x}}
 
-def isid{ptr} = ~tptr{type{ptr}}
-def load{ptr, i & isid{ptr}} = ptr + i
+def isid{ptr} = not tptr{type{ptr}}
+def load{ptr, i if isid{ptr}} = ptr + i
 def store{ptr=='sink', i, val} = val
 def __add{ptr=='sink', i} = 'sink'
 
@@ -103,9 +103,9 @@ def lazy_load{p,i} = {
     }
   }
 }
-def store{p, i, val & kgen{val}} = store{p, i, val{}}
+def store{p, i, val if kgen{val}} = store{p, i, val{}}
 def get{a} = a
-def get{a & kgen{a}} = a{}
+def get{a if kgen{a}} = a{}
 extend perv1{get}
 
 def for{vars,begin,end,iter} = {

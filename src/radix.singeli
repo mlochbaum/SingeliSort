@@ -103,9 +103,9 @@ def radix_grade_inplace{dn, x:pT, xa, g:pI, ga, n:U, count:pC} = {
 # the count array can overflow, but after taking an exclusive sum it
 # only affects portions after the last element (that is, target indices
 # can't overflow)
-def radix_fits{dn}{n, T & isint{T} & ~issigned{T}} = {
+def radix_fits{dn}{n, T if isint{T} and not issigned{T}} = {
   # But the descending SWAR code in radix_prefix_sum fails at that length
-  def adjust = if (dn and width{T}<=16) 1 else 0
+  def adjust = dn and width{T}<=16
   n <= 1<<width{T} - adjust
 }
 

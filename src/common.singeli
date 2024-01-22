@@ -1,7 +1,7 @@
 # Utilities likely to be useful for multiple sorting algorithms
 
 def map{op, a, b, n} = @for (a over n) op{a,b}
-def map{op, a, b:T, n & tptr{T}} = @for (a, b over n) op{a,b}
+def map{op, a, b:T, n if tptr{T}} = @for (a, b over n) op{a,b}
 
 def map{op,     a , {...b}, n} = each{map{op, ., b, n}, a}
 def map{op, {...a}, {...b}, n} = each{map{op, ., ., n}, a, b}
@@ -9,7 +9,7 @@ def map{op, {...a}, {...b}, n} = each{map{op, ., ., n}, a, b}
 # memset/memcpy
 def set = map{=, ...}
 
-def reverse{x:T, n & tptr{T}} = {
+def reverse{x:T, n if tptr{T}} = {
   xr := x + n-1
   @for (i to n/2) x+i <-> xr-i
 }
@@ -37,7 +37,7 @@ def dist{dn} = {
   def dsub{a:T, b:T} = primtype{'u',width{T}} ~~ (b -{dn} a)
   def dsub{U,a,b} = U ^~ dsub{a,b}
 }
-def dist{...as & 1 < tuplen{as}} = dist{0}{...as}
+def dist{...as if 1 < tuplen{as}} = dist{0}{...as}
 
 # Try the given types to lower constant overhead on small arrays
 def index_options{sort, n:U, test, itypes} = {

@@ -21,7 +21,7 @@ def sort_2{dn, ptr} = sort_2{dn, ptr, ptr}
 
 # 0 to 3 elements, could be considered a bubble sort or insertion sort
 def sort_lt4{dn, dst, src, n} = {
-  def mov = ~is{dst,src}
+  def mov = not is{dst,src}
   if (n > 1) {
     sort_2{dn, dst, src}
     if (n > 2) {
@@ -74,7 +74,7 @@ def sort_16_parity = sort_8_16_parity{
 }
 
 def sort_lt32{dn, dst, src, n:U, max} = {
-  def un = can_use_unstable{src} & isint{scaltype{src}}
+  def un = can_use_unstable{src} and isint{scaltype{src}}
   def use{l, sort_un, sort_stable} = {
     (if (un) sort_un else sort_stable){dn, dst, src}
     def cpy{dst,src} = {
@@ -91,5 +91,5 @@ def sort_lt32{dn, dst, src, n:U, max} = {
   else                          use{16, network_sort_16, sort_16_parity}
 }
 def sort_lt32{dn, dst, src, n:U} = sort_lt32{dn, dst, src, n, 32}
-def sort_lt32{dn, ptr, n:U, max & knum{max}} = sort_lt32{dn, ptr, ptr, n, max}
+def sort_lt32{dn, ptr, n:U, max if knum{max}} = sort_lt32{dn, ptr, ptr, n, max}
 def sort_lt32{dn, ptr, n:U} = sort_lt32{dn, ptr, ptr, n}
