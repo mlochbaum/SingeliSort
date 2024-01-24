@@ -20,7 +20,7 @@ def tptr{T} = 'pointer'===typekind{T}
 
 def single = match { {{x,..._}}=>x; {x}=>x }
 
-def can_use_unstable{x} = if (ktup{x}) 1 == tuplen{x} else 1
+def can_use_unstable{x} = (not ktup{x}) or 1 == length{x}
 
 def swap{a, b} = { t:=a; a=b; b=t }
 def swap_ptr{a:T, b:T if tptr{T}} = { t := *a; a <- *b; b <- t }
@@ -59,7 +59,7 @@ extend perv2{__or }
 extend perv2{__shl}
 extend perv2{__shr}
 extend perv1{__decr}
-def eachrec{f,...a} = { (extend (perv{tuplen{a}}){f}){...a} }
+def eachrec{f,...a} = { (extend (perv{length{a}}){f}){...a} }
 
 local def extend ecmp{f,g} = {
   def f{{a,..._},{b,..._}} = f{a,b}

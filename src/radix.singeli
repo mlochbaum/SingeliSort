@@ -38,7 +38,7 @@ def keyfns{len, T} = {
 # The result for step i is stored at select{dsts,i}
 def radix_main{dn, src, n:U, dsts, count:pC} = {
   def T = scaltype{src}
-  def steps = tuplen{dsts}
+  def steps = length{dsts}
   # Tuple of zeroed count arrays, and offset for signed ints
   def counts = init_counts{count, steps}
   def counts_off = where_signed{T, {c}=>c+128, counts}

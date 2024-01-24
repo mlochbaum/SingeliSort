@@ -5,7 +5,7 @@ include './xorshift'
 # Given a pointer and an odd-length tuple of indices, return the index
 # of the median value without moving any values
 def locate_median{src:pT, inds} = {
-  def l = tuplen{inds}
+  def l = length{inds}
   def k = l >> 1  # Median is greater than exactly k values
 
   # Count number of comparisons

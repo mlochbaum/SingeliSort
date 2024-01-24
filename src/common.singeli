@@ -37,7 +37,7 @@ def dist{dn} = {
   def dsub{a:T, b:T} = primtype{'u',width{T}} ~~ (b -{dn} a)
   def dsub{U,a,b} = U ^~ dsub{a,b}
 }
-def dist{...as if 1 < tuplen{as}} = dist{0}{...as}
+def dist{...as if 1 < length{as}} = dist{0}{...as}
 
 # Try the given types to lower constant overhead on small arrays
 def index_options{sort, n:U, test, itypes} = {
