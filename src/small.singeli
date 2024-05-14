@@ -49,7 +49,7 @@ def sort_4_quad{dn, dst, src} = {
 def sort_8_16_parity{n, sort_q, merge_h}{dn, dst, src} = {
   def T = scaltype{dst}
   # n elements of swap space
-  def swap = eachrec{{p:pT}=>{s:pT = copy{n,0}}, dst}
+  def swap = eachrec{{p:*T}=>{s:*T = copy{n,0}}, dst}
 
   # Sort groups of 2 or 4 elements
   def q = n/4

@@ -3,11 +3,11 @@
 # unbalanced natural runs, and 2 at the end
 # Should probably implement versions where the left or right half is
 # already in place, to avoid the set{} calls below
-def merge_into{dn, dst:pT, src:pT, left:U, n:U} = {
-  parity_merge_any{dn, eltype{pT}}(dst, src, left, n)
+def merge_into{dn, dst:*T, src:*T, left:U, n:U} = {
+  parity_merge_any{dn, T}(dst, src, left, n)
 }
 # Merge of 4
-def quad_merge{dn, x:pT, a, b, c, d, aux:pT} = {
+def quad_merge{dn, x:*T, a, b, c, d, aux:*T} = {
   l := a + b
   r := c + d
   merge_into{dn, aux,   x,   a, l}    # Left half

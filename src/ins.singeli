@@ -1,6 +1,6 @@
 # Guarded or unguarded insertion sort of len values at x
 # Unguarded requires x->(-1) to precede all of these values
-def insertion_sort{dn, x:pT, len:U, guard} = {
+def insertion_sort{dn, x:*T, len:U, guard} = {
   # First value's already in place; insert the others
   @for (xi in x over i from 1 to len) {
     # j moves backward along the array until finding the right spot
@@ -13,7 +13,7 @@ def insertion_sort{dn, x:pT, len:U, guard} = {
   }
 }
 # Default to guarded
-def insertion_sort{dn, x:pT, len:U} = insertion_sort{dn, x, len, 1}
+def insertion_sort{dn, x:*T, len:U} = insertion_sort{dn, x, len, 1}
 
 # Sort an array where indices less than start are already sorted
 def insertion_finish{dn, dst, src, start, n} = {

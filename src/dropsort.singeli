@@ -17,9 +17,7 @@
 # the last dropped value in each list, which would prevent the method
 # from working on a lot of mostly-ordered lists.
 
-def drape_sort{dn, sort}{x:pT, n:U, aux:pT} = {
-  def T = eltype{pT}
-
+def drape_sort{dn, sort}{x:*T, n:U, aux:*T} = {
   lows:U = 0          # Number of low values dropped
   highs:U = n         # n - high values dropped (written backwards)
   i:U = 1             # Index to read

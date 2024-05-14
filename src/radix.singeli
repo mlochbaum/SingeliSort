@@ -36,7 +36,7 @@ def keyfns{len, T} = {
 # Sort the n values in x with a number of radix passes equal to steps
 # Store counts in count, which must hold steps*count_len counts
 # The result for step i is stored at select{dsts,i}
-def radix_main{dn, src, n:U, dsts, count:pC} = {
+def radix_main{dn, src, n:U, dsts, count:*C} = {
   def T = scaltype{src}
   def steps = length{dsts}
   # Tuple of zeroed count arrays, and offset for signed ints
@@ -53,7 +53,7 @@ def radix_main{dn, src, n:U, dsts, count:pC} = {
 }
 
 # Zero and split into num arrays with count_len values each
-def init_counts{space:pT, num} = {
+def init_counts{space:*T, num} = {
   set{space, 0, num*count_len}
   scan{+, merge{space, copy{num-1, count_len}}}
 }
@@ -83,20 +83,20 @@ def radix_move{n}{src, dst, count, key} = {
 } # end local
 
 # Swap back and forth with aux, ending with the elements in x again
-def radix_inplace{dn, x:pT, n:U, aux:pT, count:pC} = {
+def radix_inplace{dn, x:*T, n:U, aux:*T, count:*C} = {
   def steps = getsteps{x}
   radix_main{dn, x, n, cycle{steps,tup{aux,x}}, count}
   if (steps % 2) set{x, aux, n}
 }
 
-def radix_grade_inplace{dn, x:pT, xa, g:pI, ga, n:U, count:pC} = {
+def radix_grade_inplace{dn, x:*T, xa, g:*I, ga, n:U, count:*C} = {
   def steps = getsteps{x}
   def c{...p} = cycle{steps, p}
   def dsts = flip{tup{
     shiftleft{c{x,xa}, 'sink'}, # Start at xa; ignore last
     reverse  {c{g,ga}}          # End at g
   }}
-  radix_main{dn, tup{x,scaltype{pI}~~0}, n, dsts, count}
+  radix_main{dn, tup{x,scaltype{*I}~~0}, n, dsts, count}
 }
 
 # Radix sorting works even for a count one larger than the type maximum:
@@ -110,8 +110,8 @@ def radix_fits{dn}{n, T if isint{T} and not issigned{T}} = {
 }
 
 # Radix sort on arbitrary types
-def radix{dn, x:pT, n:U, aux0} = {
-  def T = eltype{pT}; def aux = *T~~aux0
+def radix{dn, x:*T, n:U, aux0} = {
+  def aux = *T~~aux0
   count := aux+n
   def rad{C} = radix_inplace{dn, x, n, aux, *C~~count}
   index_options{rad, n, radix_fits{dn}, tup{u8, u32}}

@@ -35,7 +35,7 @@ def RH_UNTRIED = 0
 def RH_APPROVED = 2
 
 # No direction: doesn't affect median; built into sort{} and proc_pivots{}
-def get_pivot{array:pT, n:U, getaux, sort, proc_pivots, rh_state} = {
+def get_pivot{array:*T, n:U, getaux, sort, proc_pivots, rh_state} = {
   # log_2 of minimum size for sampling
   sl0:U = 8
   # Output array and index
@@ -60,7 +60,7 @@ def get_pivot{array:pT, n:U, getaux, sort, proc_pivots, rh_state} = {
 
     i:U = 0; while (i < n - (mask + 2 * gap)) add3{i, gap}
     ns := aux1 - aux
-    sort{aux, ns, *void~~aux1, ns*bytes{eltype{pT}}}
+    sort{aux, ns, *void~~aux1, ns*bytes{T}}
     proc_pivots{aux, ns}
     arr = aux
     ind = ns / 2
@@ -70,7 +70,7 @@ def get_pivot{array:pT, n:U, getaux, sort, proc_pivots, rh_state} = {
 
 # Fluxsort recurrence: partition, handle right then left side
 # src may be equal to dst or aux
-def flux_recur{dn, recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:u8} = {
+def flux_recur{dn, recur, tailcall, piv:T, src:*T, dst:*T, aux:*T, n:U, aux_bytes:U, min:T, rh_state:(u8)} = {
 
   # Partition: left side directly in dst with length l, includes pivots
   l:U = 0

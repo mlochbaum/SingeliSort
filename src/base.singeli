@@ -23,7 +23,7 @@ def single = match { {{x,..._}}=>x; {x}=>x }
 def can_use_unstable{x} = (not ktup{x}) or 1 == length{x}
 
 def swap{a, b} = { t:=a; a=b; b=t }
-def swap_ptr{a:T, b:T if tptr{T}} = { t := *a; a <- *b; b <- t }
+def swap_ptr{a:*T, b:*T} = { t := *a; a <- *b; b <- t }
 
 def __pnt{{f,...r}} = __pnt{f}
 def ptr_gt{a,b} = load{a,0} > load{b,0}
@@ -34,15 +34,15 @@ def U = usize
 def bytes{t if ktyp{t}} = width{t} / 8
 
 # Change to unsigned: here we always subtract smaller from greater
-def __sub{a:P,b:P if tptr{P}}  = emit{usize, 'op -', a, b}
+def __sub{a:*P, b:*P}  = emit{usize, 'op -', a, b}
 
-def addtype{a:T} = if (tptr{T}) usize else T
-def __add{a, b:u1} = __add{a, addtype{a}^~b}
-def __sub{a, b:u1} = __sub{a, addtype{a}^~b}
+def addtype{T} = if (tptr{T}) usize else T
+def __add{a:T, b:(u1)} = __add{a, addtype{T}^~b}
+def __sub{a:T, b:(u1)} = __sub{a, addtype{T}^~b}
 
 def clone{old} = { new:=old }
 
-def leading_zeros{x:u64} = u8 <~ emit{i32, '__builtin_clzll', x}
+def leading_zeros{x:(u64)} = u8 <~ emit{i32, '__builtin_clzll', x}
 
 def expect{e}{X} = emit{type{X}, '__builtin_expect', X,e}
 def RARE   = expect{0}
@@ -83,8 +83,11 @@ def __sub{dn==0} = __sub
 def __sub{dn==1}{a,b} = b-a
 
 def type{{s,..._}} = type{s}
-def scaltype{T} = if (tptr{T}) scaltype{eltype{T}} else T
-def scaltype{x if not ktyp{x}} = scaltype{type{x}}
+def scaltype = match {
+  {*T} => scaltype{T}
+  {T if ktyp{T}} => T
+  {x} => scaltype{type{x}}
+}
 
 def isid{ptr} = not tptr{type{ptr}}
 def load{ptr, i if isid{ptr}} = ptr + i

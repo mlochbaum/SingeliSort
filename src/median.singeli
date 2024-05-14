@@ -4,7 +4,7 @@ include './xorshift'
 
 # Given a pointer and an odd-length tuple of indices, return the index
 # of the median value without moving any values
-def locate_median{src:pT, inds} = {
+def locate_median{src:*T, inds} = {
   def l = length{inds}
   def k = l >> 1  # Median is greater than exactly k values
 
@@ -32,8 +32,8 @@ fn locate_median_3{T,U}(src:*T, i0:U, i1:U, i2:U) : U = {
 fn locate_median_5{T,U}(src:*T, i0:U, i1:U, i2:U, i3:U, i4:U) : U = {
   locate_median{src, tup{i0,i1,i2,i3,i4}}
 }
-def median_from{medfn}{array:pT, U} = {
-  def fun = medfn{eltype{pT},U}
+def median_from{medfn}{array:*T, U} = {
+  def fun = medfn{T,U}
   {...inds} => fun(array, ...inds)
 }
 def median3_from = median_from{locate_median_3}
@@ -41,11 +41,11 @@ def median5_from = median_from{locate_median_5}
 
 } # end local
 
-def locate_3_median{array:pT, n:U} = {
+def locate_3_median{array:*T, n:U} = {
   median3_from{array,U}{0,n/2,n-1}
 }
 
-def locate_3of3_pseudomedian{array:pT, n:U} = {
+def locate_3of3_pseudomedian{array:*T, n:U} = {
   q1 := n / 4
   q2 := n / 2
   q3 := n - q1
@@ -57,7 +57,7 @@ def locate_3of3_pseudomedian{array:pT, n:U} = {
   }
 }
 
-def locate_5of3_pseudomedian{array:pT, n:U} = {
+def locate_5of3_pseudomedian{array:*T, n:U} = {
   def xorshift16 = make_split_xorshift{tup{7,9,8}, n, 63}
   div := n / 16
   def med = median3_from{array, U}

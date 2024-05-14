@@ -47,8 +47,7 @@ def count_sort{dn, x:*T, n:U, aux:*U, min:T, range:U} = {
 }
 
 # Assume full range
-def count_sort{dn, x:pT, n:U, aux} = {
-  def T = eltype{pT}
+def count_sort{dn, x:*T, n:U, aux} = {
   def range = 1<<width{T}
   def min = if (issigned{T}) -range/2 else 0
   count_sort{dn, x, n, *U~~aux, T~~min, U~~range}

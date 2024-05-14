@@ -144,8 +144,8 @@ fn rh_sort{dn, T, range}(x:*T, n:U, aux:*T) : void = {
   }
 }
 
-def try_rh{dn, dst:pT, src:pT, n:U, aux:pT, aux_bytes:U, minv, maxv} = {
-  na := aux_bytes / bytes{eltype{pT}}
+def try_rh{dn, dst:*T, src:*T, n:U, aux:*T, aux_bytes:U, minv, maxv} = {
+  na := aux_bytes / bytes{T}
   def exit = makelabel{}
   def req{cond} = { if (not cond) goto{exit} }
   req{n <= 1<<16}              # Partitioning is better
