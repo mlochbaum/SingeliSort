@@ -64,7 +64,7 @@ def drape_sort{dn, sort}{x:*T, n:U, aux:*T} = {
     stop:U = 0
     while (stop<drop_len and cmp{drops->stop, x->0}) ++stop
     # Main loop
-    @for_backwards (d in drops from stop to drop_len) {
+    @for_backwards (d in drops over _ from stop to drop_len) {
       v:=undefined{T}; jn:=undefined{U}
       while (cmp{d, (v = x->(jn=j-1))}) { --i; x <-{i} v; j=jn }
       --i; x <-{i} d

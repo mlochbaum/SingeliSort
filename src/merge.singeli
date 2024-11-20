@@ -116,7 +116,7 @@ def unbalanced_merge{shp, short, lop, long, dst, n, lt} = {
     dst <-{k} u; ++i; ++k
   }
   i = short-1; j = long-1
-  @for_backwards (d in dst from k to n) {
+  @for_backwards (d in dst over _ from k to n) {
     u := shp->i; v := lop->j
     if (not lt{u,v}) { d = u; --i }
     else             { d = v; --j }
