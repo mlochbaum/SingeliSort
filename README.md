@@ -6,7 +6,7 @@ Compile with (add `-t cpp` for C++ compatibility):
 
     singeli src/sort.singeli -o sort.c
 
-Or the following without a Singeli install. CBQN builds on Unix-like systems (including macOS and WSL) in under a minute; see [WinBQN](https://github.com/actalley/WinBQN) for Windows. There's also a pre-compiled copy of sort.c in `compiled/sort.c`. It may not always be up to date.
+Or the following without a Singeli install. CBQN builds on Unix-like systems (including macOS and WSL) in under a minute; see [docker build](https://github.com/vylsaz/cbqn-win-docker-build) for Windows. There's also a pre-compiled copy of sort.c in `compiled/sort.c`. It may not always be up to date.
 
     git clone https://github.com/dzaima/CBQN.git
     cd CBQN && make && cd -
@@ -47,7 +47,7 @@ The source code is supposed to be the place to go to get full descriptions and d
 
 The general-use files:
 
-- sort.singeli Main file: includes and the sorting function definitions.
+- sort.singeli Main file: include statements, and the sorting function definitions.
 - base.singeli Basic definitions to be used elsewhere. This includes operators, which are all user-defined in Singeli.
 - common.singeli Other definitions that are more specific than base but may be used in multiple places.
 - arith.singeli Some log and square root code to keep it out of the way.
